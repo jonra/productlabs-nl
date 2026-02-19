@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Labs — Tech Solution Partner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;1,9..40,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:    #0d0d0d;
+      --paper:  #f5f3ee;
+      --accent: #d64e12;
+      --muted:  #7a7570;
+      --rule:   #ddd9d2;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.5rem 4rem;
+      backdrop-filter: blur(12px);
+      background: rgba(245,243,238,.85);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: -.02em;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .logo span { color: var(--accent); }
+
+    nav a.cta-nav {
+      font-size: .85rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 2px;
+      transition: color .2s;
+    }
+    nav a.cta-nav:hover { color: var(--accent); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 8rem 4rem 6rem;
+      position: relative;
+    }
+
+    /* subtle grid background */
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--rule) 1px, transparent 1px),
+        linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+      background-size: 64px 64px;
+      opacity: .5;
+    }
+
+    .hero-inner {
+      position: relative;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: .5rem;
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      animation: fadeUp .6s ease both;
+    }
+    .eyebrow::before {
+      content: '';
+      display: block; width: 24px; height: 2px;
+      background: var(--accent);
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(3rem, 7vw, 6rem);
+      font-weight: 800;
+      line-height: 1.0;
+      letter-spacing: -.03em;
+      margin-bottom: 1.75rem;
+      animation: fadeUp .6s .1s ease both;
+    }
+    h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .sub {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      font-weight: 300;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.7;
+      margin-bottom: 3rem;
+      animation: fadeUp .6s .2s ease both;
+    }
+
+    .btn-group {
+      display: flex; gap: 1rem; flex-wrap: wrap;
+      animation: fadeUp .6s .3s ease both;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: .85rem 2rem;
+      font-family: 'Syne', sans-serif;
+      font-size: .88rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-decoration: none;
+      transition: all .2s;
+      border: 2px solid var(--ink);
+    }
+    .btn-primary {
+      background: var(--ink); color: var(--paper);
+    }
+    .btn-primary:hover {
+      background: var(--accent); border-color: var(--accent);
+    }
+    .btn-ghost {
+      background: transparent; color: var(--ink);
+    }
+    .btn-ghost:hover {
+      background: var(--ink); color: var(--paper);
+    }
+
+    /* decorative large text */
+    .hero-deco {
+      position: absolute;
+      right: -2rem; top: 50%;
+      transform: translateY(-50%);
+      font-family: 'Syne', sans-serif;
+      font-size: 18vw;
+      font-weight: 800;
+      color: transparent;
+      -webkit-text-stroke: 1px var(--rule);
+      pointer-events: none;
+      user-select: none;
+      line-height: 1;
+    }
+
+    /* ─── SERVICES ─── */
+    .section {
+      padding: 7rem 4rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .section-label {
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      margin-bottom: 4rem;
+      max-width: 600px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2px;
+      border: 2px solid var(--ink);
+    }
+
+    .service-card {
+      padding: 2.5rem;
+      border-right: 2px solid var(--ink);
+      background: var(--paper);
+      transition: background .2s;
+      cursor: default;
+    }
+    .service-card:last-child { border-right: none; }
+    .service-card:hover { background: var(--ink); color: var(--paper); }
+    .service-card:hover .service-icon { color: var(--accent); }
+    .service-card:hover .service-num { color: rgba(255,255,255,.2); }
+
+    .service-num {
+      font-family: 'Syne', sans-serif;
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      color: var(--rule);
+      margin-bottom: 2rem;
+      transition: color .2s;
+    }
+
+    .service-icon {
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+      color: var(--accent);
+      transition: color .2s;
+    }
+
+    .service-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: .6rem;
+    }
+
+    .service-card p {
+      font-size: .88rem;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--muted);
+      transition: color .2s;
+    }
+    .service-card:hover p { color: rgba(255,255,255,.7); }
+
+    /* ─── CONTACT ─── */
+    .contact-section {
+      padding: 7rem 4rem;
+      border-top: 1px solid var(--rule);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    @media (max-width: 700px) {
+      .contact-section { grid-template-columns: 1fr; }
+    }
+
+    .contact-section .section-title { margin-bottom: 1rem; }
+    .contact-section .sub { margin-bottom: 0; }
+
+    .contact-right {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .contact-item {
+      display: flex; align-items: flex-start; gap: 1rem;
+      padding: 1.75rem;
+      border: 1px solid var(--rule);
+      transition: border-color .2s;
+    }
+    .contact-item:hover { border-color: var(--accent); }
+
+    .contact-item-icon {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+      color: var(--accent);
+      margin-top: .1rem;
+    }
+
+    .contact-item-label {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .3rem;
+    }
+
+    .contact-item a {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .contact-item a:hover { color: var(--accent); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      padding: 2rem 4rem;
+      border-top: 1px solid var(--rule);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: .8rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      nav { padding: 1.25rem 1.5rem; }
+      .hero { padding: 7rem 1.5rem 4rem; }
+      .section { padding: 5rem 1.5rem; }
+      .hero-deco { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="logo">Product<span>Labs</span></a>
+    <a href="#contact" class="cta-nav">Get in touch</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Tech Solution Partner · The Netherlands</div>
+      <h1>Turning ideas into<br><em>impactful</em> solutions</h1>
+      <p class="sub">We partner with ambitious teams to design, build and scale software products that make a real difference.</p>
+      <div class="btn-group">
+        <a href="#contact" class="btn btn-primary">Work with us</a>
+        <a href="#services" class="btn btn-ghost">What we do</a>
+      </div>
+    </div>
+    <div class="hero-deco" aria-hidden="true">PL</div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="section" id="services">
+    <div class="section-label">What we do</div>
+    <h2 class="section-title">End-to-end technology solutions for builders</h2>
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-num">01</div>
+        <div class="service-icon">⬡</div>
+        <h3>Cybersecurity</h3>
+        <p>We help organisations build resilient security postures — from threat intelligence and compliance to Zero Trust architecture. Our speciality is <strong>agentic security</strong>: AI-driven agents that proactively monitor, detect, and respond to threats before advisories drop, so your team stays ahead without the overhead.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact-section" id="contact">
+    <div>
+      <div class="section-label">Let's talk</div>
+      <h2 class="section-title">Ready to build something great?</h2>
+      <p class="sub">We're always open to new challenges and conversations. Drop us a line.</p>
+    </div>
+    <div class="contact-right">
+      <div class="contact-item">
+        <div class="contact-item-icon">✉</div>
+        <div>
+          <div class="contact-item-label">Email</div>
+          <a href="mailto:hello@productlabs.nl">hello@productlabs.nl</a>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-item-icon">📍</div>
+        <div>
+          <div class="contact-item-label">Location</div>
+          <a href="https://maps.google.com/?q=Amsterdam,Netherlands" target="_blank" rel="noopener">Amsterdam, The Netherlands</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>© 2025 Product Labs B.V. · The Netherlands</span>
+    <span>All rights reserved · <a href="mailto:hello@productlabs.nl">hello@productlabs.nl</a></span>
+  </footer>
+
+</body>
+</html>
