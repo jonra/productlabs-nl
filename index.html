@@ -3,10 +3,106 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Product Labs — Tech Solution Partner</title>
+  <title>ProductLabs — Anthropic Claude Integration &amp; Solutions Partner | Netherlands</title>
+  <meta name="description" content="ProductLabs is a specialist Anthropic Claude solutions provider based in the Netherlands. We build Claude AI integrations, MCP servers, custom skills, and workflow automations for startups and SMBs." />
+  <meta name="keywords" content="Anthropic Claude, Claude AI, Claude integration, MCP server, Claude skills, Claude plugins, AI consulting, Anthropic API, Claude solutions, Netherlands, Amsterdam, AI automation" />
+  <link rel="canonical" href="https://www.productlabs.nl/" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="ProductLabs — Anthropic Claude Solutions Partner" />
+  <meta property="og:description" content="We help startups and SMBs build with Anthropic's Claude — custom integrations, MCP servers, workflow automation, and AI strategy." />
+  <meta property="og:url" content="https://www.productlabs.nl/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_NL" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ProductLabs — Anthropic Claude Solutions Partner" />
+  <meta name="twitter:description" content="Specialist Claude AI integrations, MCP servers, and workflow automation for startups and SMBs." />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl",
+    "description": "Specialist Anthropic Claude AI solutions provider. We build custom Claude integrations, MCP servers, skills, plugins, and agentic workflows for startups and SMBs.",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Amsterdam",
+      "addressCountry": "NL"
+    },
+    "email": "hello@productlabs.nl",
+    "areaServed": ["NL", "EU"],
+    "knowsAbout": [
+      "Anthropic Claude",
+      "Claude AI",
+      "Model Context Protocol",
+      "MCP Servers",
+      "Claude API Integration",
+      "AI Workflow Automation",
+      "Claude Skills Development",
+      "Claude Plugin Development",
+      "Prompt Engineering",
+      "Agentic AI",
+      "Claude Code"
+    ],
+    "serviceType": [
+      "AI Integration",
+      "Claude Solutions Development",
+      "MCP Server Development",
+      "AI Strategy Consulting",
+      "Workflow Automation"
+    ]
+  }
+  </script>
+
+  <!-- FAQ Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is a Claude solutions provider?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A Claude solutions provider is a company that specializes in building integrations, automations, and custom applications using Anthropic's Claude AI platform. This includes developing MCP (Model Context Protocol) servers, custom Claude skills and plugins, API integrations, and agentic workflows that connect Claude to your business tools and data."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the Model Context Protocol (MCP) and why does it matter?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The Model Context Protocol (MCP) is an open standard developed by Anthropic that allows Claude to connect to external tools, databases, and services. MCP servers act as bridges between Claude and your business systems — enabling Claude to read your data, take actions in your tools, and automate workflows. ProductLabs builds custom MCP servers tailored to your specific tech stack."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How can Anthropic's Claude help my startup or small business?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Claude can automate document processing, generate reports, handle customer communications, extract and analyze data, assist with code generation, and power intelligent features in your product. For startups and SMBs, Claude offers enterprise-grade AI capabilities without requiring an in-house ML team. ProductLabs helps you identify the highest-impact use cases and build production-ready solutions."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What are Claude skills and plugins?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Claude skills are specialized instruction sets that give Claude domain-specific capabilities — like generating legal documents, analyzing financial data, or following your brand guidelines. Plugins bundle skills, MCP servers, and tools into installable packages. ProductLabs designs and builds custom skills and plugins that make Claude an expert in your specific workflows."
+        }
+      }
+    ]
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;1,9..40,300&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -48,6 +144,19 @@
     }
     .logo span { color: var(--accent); }
 
+    .nav-links {
+      display: flex; align-items: center; gap: 2.5rem;
+    }
+
+    .nav-links a {
+      font-size: .85rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--ink); }
+
     nav a.cta-nav {
       font-size: .85rem;
       font-weight: 600;
@@ -70,7 +179,6 @@
       position: relative;
     }
 
-    /* subtle grid background */
     .hero::before {
       content: '';
       position: absolute; inset: 0;
@@ -105,7 +213,7 @@
 
     h1 {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(3rem, 7vw, 6rem);
+      font-size: clamp(3rem, 7vw, 5.5rem);
       font-weight: 800;
       line-height: 1.0;
       letter-spacing: -.03em;
@@ -121,7 +229,7 @@
       font-size: clamp(1rem, 2vw, 1.25rem);
       font-weight: 300;
       color: var(--muted);
-      max-width: 520px;
+      max-width: 580px;
       line-height: 1.7;
       margin-bottom: 3rem;
       animation: fadeUp .6s .2s ease both;
@@ -156,7 +264,6 @@
       background: var(--ink); color: var(--paper);
     }
 
-    /* decorative large text */
     .hero-deco {
       position: absolute;
       right: -2rem; top: 50%;
@@ -171,7 +278,7 @@
       line-height: 1;
     }
 
-    /* ─── SERVICES ─── */
+    /* ─── SECTIONS ─── */
     .section {
       padding: 7rem 4rem;
       border-top: 1px solid var(--rule);
@@ -191,25 +298,36 @@
       font-size: clamp(2rem, 4vw, 3rem);
       font-weight: 700;
       letter-spacing: -.02em;
-      margin-bottom: 4rem;
-      max-width: 600px;
+      margin-bottom: 1.25rem;
+      max-width: 700px;
     }
 
+    .section-sub {
+      font-size: 1.05rem;
+      font-weight: 300;
+      color: var(--muted);
+      max-width: 620px;
+      line-height: 1.7;
+      margin-bottom: 4rem;
+    }
+
+    /* ─── SERVICES GRID ─── */
     .services-grid {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 2px;
       border: 2px solid var(--ink);
     }
 
     .service-card {
       padding: 2.5rem;
-      border-right: 2px solid var(--ink);
       background: var(--paper);
-      transition: background .2s;
+      transition: background .2s, color .2s;
       cursor: default;
+      border-right: 2px solid var(--ink);
     }
-    .service-card:last-child { border-right: none; }
+    .service-card:nth-child(3n) { border-right: none; }
+    .service-card:nth-child(n+4) { border-top: 2px solid var(--ink); }
     .service-card:hover { background: var(--ink); color: var(--paper); }
     .service-card:hover .service-icon { color: var(--accent); }
     .service-card:hover .service-num { color: rgba(255,255,255,.2); }
@@ -247,6 +365,168 @@
     }
     .service-card:hover p { color: rgba(255,255,255,.7); }
 
+    /* ─── ANTHROPIC ECOSYSTEM ─── */
+    .ecosystem {
+      padding: 5rem 4rem;
+      border-top: 1px solid var(--rule);
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .ecosystem .section-label { color: var(--accent); }
+    .ecosystem .section-title { color: var(--paper); margin-bottom: 1.5rem; }
+    .ecosystem .section-sub { color: rgba(255,255,255,.6); margin-bottom: 3rem; }
+
+    .eco-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .eco-item {
+      padding: 1.75rem;
+      border: 1px solid rgba(255,255,255,.1);
+      transition: border-color .2s;
+    }
+
+    .eco-item:hover { border-color: var(--accent); }
+
+    .eco-item h4 {
+      font-family: 'Syne', sans-serif;
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: .4rem;
+    }
+
+    .eco-item p {
+      font-size: .82rem;
+      font-weight: 300;
+      color: rgba(255,255,255,.5);
+      line-height: 1.55;
+    }
+
+    /* ─── USE CASES ─── */
+    .cases-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .case-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.5rem;
+      border: 1px solid var(--rule);
+      transition: border-color .2s;
+    }
+
+    .case-item:hover { border-color: var(--accent); }
+
+    .case-icon {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+
+    .case-item h4 {
+      font-family: 'Syne', sans-serif;
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: .3rem;
+    }
+
+    .case-item p {
+      font-size: .85rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ─── APPROACH ─── */
+    .approach-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem;
+    }
+
+    .approach-item {
+      position: relative;
+      padding-top: 2rem;
+    }
+
+    .approach-item::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 40px; height: 3px;
+      background: var(--accent);
+    }
+
+    .approach-item h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: .6rem;
+    }
+
+    .approach-item p {
+      font-size: .9rem;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    /* ─── FAQ ─── */
+    .faq-list {
+      max-width: 720px;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid var(--rule);
+      padding: 2rem 0;
+    }
+
+    .faq-item:first-child { border-top: 1px solid var(--rule); }
+
+    .faq-q {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: .75rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .faq-q::after {
+      content: '+';
+      font-size: 1.3rem;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-left: 1rem;
+      transition: transform .2s;
+    }
+
+    .faq-item.open .faq-q::after {
+      transform: rotate(45deg);
+    }
+
+    .faq-a {
+      font-size: .9rem;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--muted);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .3s ease;
+    }
+
+    .faq-item.open .faq-a {
+      max-height: 300px;
+    }
+
     /* ─── CONTACT ─── */
     .contact-section {
       padding: 7rem 4rem;
@@ -255,10 +535,6 @@
       grid-template-columns: 1fr 1fr;
       gap: 4rem;
       align-items: center;
-    }
-
-    @media (max-width: 700px) {
-      .contact-section { grid-template-columns: 1fr; }
     }
 
     .contact-section .section-title { margin-bottom: 1rem; }
@@ -324,12 +600,40 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    .fade-in {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     /* ─── RESPONSIVE ─── */
+    @media (max-width: 1024px) {
+      .services-grid { grid-template-columns: repeat(2, 1fr); }
+      .service-card:nth-child(3n) { border-right: 2px solid var(--ink); }
+      .service-card:nth-child(2n) { border-right: none; }
+      .service-card:nth-child(n+3) { border-top: 2px solid var(--ink); }
+      .eco-grid { grid-template-columns: repeat(2, 1fr); }
+      .cases-list { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 768px) {
       nav { padding: 1.25rem 1.5rem; }
+      .nav-links { display: none; }
       .hero { padding: 7rem 1.5rem 4rem; }
       .section { padding: 5rem 1.5rem; }
+      .ecosystem { padding: 5rem 1.5rem; }
+      .contact-section { padding: 5rem 1.5rem; grid-template-columns: 1fr; }
       .hero-deco { display: none; }
+      .services-grid { grid-template-columns: 1fr; }
+      .service-card { border-right: none !important; }
+      .service-card + .service-card { border-top: 2px solid var(--ink); }
+      .eco-grid { grid-template-columns: 1fr; }
+      .approach-grid { grid-template-columns: 1fr; gap: 2rem; }
+      footer { padding: 2rem 1.5rem; }
     }
   </style>
 </head>
@@ -338,33 +642,182 @@
   <!-- NAV -->
   <nav>
     <a href="#" class="logo">Product<span>Labs</span></a>
+    <div class="nav-links">
+      <a href="#services">Services</a>
+      <a href="#ecosystem">Anthropic ecosystem</a>
+      <a href="#use-cases">Use cases</a>
+      <a href="#faq">FAQ</a>
+    </div>
     <a href="#contact" class="cta-nav">Get in touch</a>
   </nav>
 
   <!-- HERO -->
   <section class="hero">
     <div class="hero-inner">
-      <div class="eyebrow">Tech Solution Partner · The Netherlands</div>
-      <h1>Turning ideas into<br><em>impactful</em> solutions</h1>
-      <p class="sub">We partner with ambitious teams to design, build and scale software products that make a real difference.</p>
+      <div class="eyebrow">Anthropic Claude Solutions · The Netherlands</div>
+      <h1>Your dedicated <em>Claude</em> solutions partner</h1>
+      <p class="sub">ProductLabs helps startups and growing companies build with Anthropic's Claude. From custom MCP integrations to full agentic workflows — we turn Claude's capabilities into your competitive edge.</p>
       <div class="btn-group">
-        <a href="#contact" class="btn btn-primary">Work with us</a>
-        <a href="#services" class="btn btn-ghost">What we do</a>
+        <a href="#contact" class="btn btn-primary">Book a free consult</a>
+        <a href="#services" class="btn btn-ghost">See our services</a>
       </div>
     </div>
-    <div class="hero-deco" aria-hidden="true">PL</div>
+    <div class="hero-deco" aria-hidden="true">AI</div>
   </section>
 
   <!-- SERVICES -->
   <section class="section" id="services">
-    <div class="section-label">What we do</div>
-    <h2 class="section-title">End-to-end technology solutions for builders</h2>
-    <div class="services-grid">
+    <div class="section-label">Anthropic Claude services</div>
+    <h2 class="section-title">Claude AI solutions, end to end</h2>
+    <p class="section-sub">We specialize in the Anthropic ecosystem. Whether you need a Claude API integration, a custom MCP server, or a full AI-powered workflow — we build it, deploy it, and make sure it works.</p>
+    <div class="services-grid fade-in">
       <div class="service-card">
         <div class="service-num">01</div>
+        <div class="service-icon">⚡</div>
+        <h3>Claude Workflow Automation</h3>
+        <p>Automate repetitive knowledge work with Claude-powered agents. Document processing, email triage, data extraction, report generation — we build agentic workflows that run on Anthropic's Claude so your team can focus on higher-value work.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-num">02</div>
         <div class="service-icon">⬡</div>
-        <h3>Cybersecurity</h3>
-        <p>We help organisations build resilient security postures — from threat intelligence and compliance to Zero Trust architecture. Our speciality is <strong>agentic security</strong>: AI-driven agents that proactively monitor, detect, and respond to threats before advisories drop, so your team stays ahead without the overhead.</p>
+        <h3>MCP Server Development</h3>
+        <p>We build custom Model Context Protocol (MCP) servers that connect Claude to your internal tools, databases, and APIs. MCP is Anthropic's open standard for tool integration — and it's the backbone of production-grade Claude deployments.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-num">03</div>
+        <div class="service-icon">⟁</div>
+        <h3>Claude API Integration</h3>
+        <p>Embed Anthropic's Claude directly into your product or internal systems via the Claude API. We handle architecture, prompt engineering, and production deployment — including Claude Opus, Sonnet, and Haiku model selection for the right cost-performance balance.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-num">04</div>
+        <div class="service-icon">◈</div>
+        <h3>Custom Skills &amp; Plugins</h3>
+        <p>We design and build custom Claude skills and plugins that give Claude domain-specific superpowers for your business. From specialized document generators to industry-specific analysis tools — packaged as reusable, shareable components in the Anthropic ecosystem.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-num">05</div>
+        <div class="service-icon">⬢</div>
+        <h3>AI Security &amp; Agentic Monitoring</h3>
+        <p>Claude-powered security agents that proactively monitor, detect, and respond to threats. We combine Anthropic's Claude reasoning capabilities with cybersecurity best practices for autonomous threat intelligence and incident response.</p>
+      </div>
+      <div class="service-card">
+        <div class="service-num">06</div>
+        <div class="service-icon">▣</div>
+        <h3>Claude Strategy &amp; Training</h3>
+        <p>Not sure where to start with Anthropic's Claude? We help you identify the highest-impact use cases, build a roadmap, and train your team — from prompt engineering fundamentals to building their own Claude skills and automations.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANTHROPIC ECOSYSTEM -->
+  <section class="ecosystem" id="ecosystem">
+    <div class="section-label">The Anthropic ecosystem</div>
+    <h2 class="section-title">Deep expertise across the full Claude platform</h2>
+    <p class="section-sub">We work across every layer of Anthropic's Claude platform — so you get solutions that are built right, not hacked together.</p>
+    <div class="eco-grid fade-in">
+      <div class="eco-item">
+        <h4>Claude API</h4>
+        <p>Production integrations using the Anthropic API — model routing, streaming, tool use, and multi-turn conversations at scale.</p>
+      </div>
+      <div class="eco-item">
+        <h4>Model Context Protocol</h4>
+        <p>Custom MCP servers that connect Claude to your databases, SaaS tools, and internal systems. The standard Anthropic built for tool integration.</p>
+      </div>
+      <div class="eco-item">
+        <h4>Claude Code &amp; Agents</h4>
+        <p>Agentic workflows built on Claude Code and the Claude Agent SDK. Autonomous agents that reason, plan, and execute multi-step tasks.</p>
+      </div>
+      <div class="eco-item">
+        <h4>Skills &amp; Plugins</h4>
+        <p>Custom Claude skills and plugins that package domain expertise into reusable components — installable, shareable, and production-ready.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section class="section" id="use-cases">
+    <div class="section-label">Claude AI use cases</div>
+    <h2 class="section-title">Built for teams that move fast</h2>
+    <p class="section-sub">We help startups and SMBs across industries put Anthropic's Claude to work on real problems.</p>
+    <div class="cases-list fade-in">
+      <div class="case-item">
+        <div class="case-icon">&#x2192;</div>
+        <div>
+          <h4>SaaS startups</h4>
+          <p>Add Claude-powered AI features to your product without building an ML team. We integrate the Anthropic API into your stack so you can ship smarter, faster.</p>
+        </div>
+      </div>
+      <div class="case-item">
+        <div class="case-icon">&#x2192;</div>
+        <div>
+          <h4>Professional services</h4>
+          <p>Law firms, consultancies, and agencies drowning in documents. We build Claude-powered MCP integrations that cut hours of manual work to minutes.</p>
+        </div>
+      </div>
+      <div class="case-item">
+        <div class="case-icon">&#x2192;</div>
+        <div>
+          <h4>E-commerce &amp; retail</h4>
+          <p>Intelligent product content, customer support automation, and inventory insights — all powered by Anthropic's Claude, all tailored to your catalogue and brand voice.</p>
+        </div>
+      </div>
+      <div class="case-item">
+        <div class="case-icon">&#x2192;</div>
+        <div>
+          <h4>Internal operations</h4>
+          <p>HR, finance, ops — any team handling repetitive knowledge work. We build Claude agentic workflows that automate the routine so your people can do their best work.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPROACH -->
+  <section class="section" id="approach">
+    <div class="section-label">Why ProductLabs</div>
+    <h2 class="section-title">Anthropic Claude specialists, not generalists</h2>
+    <p class="section-sub">We go deep on one thing: making Anthropic's Claude work brilliantly for your business.</p>
+    <div class="approach-grid fade-in">
+      <div class="approach-item">
+        <h3>Claude-first expertise</h3>
+        <p>We know the Anthropic ecosystem inside out — the Claude API, Claude Code, Model Context Protocol, skills, plugins. You get a team that builds on Claude every day.</p>
+      </div>
+      <div class="approach-item">
+        <h3>Startup-speed delivery</h3>
+        <p>No six-month consulting engagements. We scope tight, build fast, and get your Claude integration to production in weeks, not quarters. Iterate from there.</p>
+      </div>
+      <div class="approach-item">
+        <h3>You own everything</h3>
+        <p>No lock-in, no proprietary wrappers. Every MCP server, Claude skill, and integration we build is yours — fully documented, fully transferable, fully open.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <div class="section-label">Frequently asked questions</div>
+    <h2 class="section-title">Common questions about Claude AI solutions</h2>
+    <p class="section-sub">Everything you need to know about working with Anthropic's Claude through ProductLabs.</p>
+    <div class="faq-list fade-in">
+      <div class="faq-item">
+        <div class="faq-q">What is Anthropic's Claude and why should my business care?</div>
+        <div class="faq-a">Claude is Anthropic's frontier AI assistant — one of the most capable large language models available. It excels at reasoning, analysis, coding, and natural language tasks. For businesses, Claude can automate knowledge work, power intelligent product features, and handle complex workflows that previously required human judgment. ProductLabs helps you identify where Claude creates the most value and builds the integrations to make it happen.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What is the Model Context Protocol (MCP)?</div>
+        <div class="faq-a">MCP is an open standard developed by Anthropic that lets Claude connect to external tools, databases, and services. Think of MCP servers as bridges between Claude and your business systems — they allow Claude to read your data, take actions in your tools, and automate end-to-end workflows. ProductLabs builds custom MCP servers tailored to your specific tech stack and business needs.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What are Claude skills and plugins?</div>
+        <div class="faq-a">Claude skills are specialized instruction packages that give Claude domain-specific capabilities — like generating legal documents, analyzing financial data, or following your brand guidelines. Plugins bundle multiple skills, MCP servers, and tools into installable packages. ProductLabs designs and builds custom skills and plugins that make Claude an expert in your specific workflows, ready to deploy across your team.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do I need a large team or budget to use Claude?</div>
+        <div class="faq-a">Not at all. Anthropic's Claude API is accessible and pay-per-use, which makes it ideal for startups and SMBs. You don't need an in-house ML team or massive infrastructure. ProductLabs handles the technical implementation — from API integration to prompt engineering to deployment — so you get enterprise-grade AI capabilities at a fraction of the cost of building in-house.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How long does a typical Claude integration take?</div>
+        <div class="faq-a">Most Claude integrations go from scoping to production in 2-6 weeks, depending on complexity. A simple API integration or MCP server might take 1-2 weeks. A full agentic workflow with multiple tool integrations typically takes 4-6 weeks. We scope every project upfront so there are no surprises.</div>
       </div>
     </div>
   </section>
@@ -372,20 +825,20 @@
   <!-- CONTACT -->
   <section class="contact-section" id="contact">
     <div>
-      <div class="section-label">Let's talk</div>
-      <h2 class="section-title">Ready to build something great?</h2>
-      <p class="sub">We're always open to new challenges and conversations. Drop us a line.</p>
+      <div class="section-label">Start building with Claude</div>
+      <h2 class="section-title">Ready to put Anthropic's Claude to work?</h2>
+      <p class="sub">Tell us what you're working on. We'll show you how Claude can help — no strings attached.</p>
     </div>
     <div class="contact-right">
       <div class="contact-item">
-        <div class="contact-item-icon">✉</div>
+        <div class="contact-item-icon">&#9993;</div>
         <div>
           <div class="contact-item-label">Email</div>
           <a href="mailto:hello@productlabs.nl">hello@productlabs.nl</a>
         </div>
       </div>
       <div class="contact-item">
-        <div class="contact-item-icon">📍</div>
+        <div class="contact-item-icon">&#128205;</div>
         <div>
           <div class="contact-item-label">Location</div>
           <a href="https://maps.google.com/?q=Amsterdam,Netherlands" target="_blank" rel="noopener">Amsterdam, The Netherlands</a>
@@ -396,9 +849,24 @@
 
   <!-- FOOTER -->
   <footer>
-    <span>© 2025 Product Labs B.V. · The Netherlands</span>
-    <span>All rights reserved · <a href="mailto:hello@productlabs.nl">hello@productlabs.nl</a></span>
+    <span>&copy; 2026 Product Labs B.V. &middot; Amsterdam, The Netherlands</span>
+    <span>Anthropic Claude Solutions Partner &middot; <a href="mailto:hello@productlabs.nl">hello@productlabs.nl</a></span>
   </footer>
+
+  <script>
+    // Scroll fade-in
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-q').forEach(q => {
+      q.addEventListener('click', () => {
+        q.parentElement.classList.toggle('open');
+      });
+    });
+  </script>
 
 </body>
 </html>
