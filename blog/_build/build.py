@@ -203,7 +203,7 @@ def head(title: str, description: str, canonical: str, *,
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f5f3ee" />
+  <meta name="theme-color" content="#F3F1ED" />
   <title>{html.escape(title)}</title>
   <meta name="description" content="{html.escape(description)}" />
   <link rel="canonical" href="{canonical}" />
@@ -219,7 +219,7 @@ def head(title: str, description: str, canonical: str, *,
   <meta name="twitter:description" content="{html.escape(description)}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/blog/assets/blog.css" />
 {extra}</head>
 <body>
@@ -231,12 +231,13 @@ def nav(active: str = "") -> str:
     return f"""  <nav>
     <a href="/" class="logo">Product<span>Labs</span></a>
     <div class="nav-links">
-      <a href="/#services">Services</a>
-      <a href="/#ecosystem">Anthropic ecosystem</a>
-      <a href="/#use-cases">Use cases</a>
+      <a href="/#solutions">Solutions</a>
+      <a href="/#engineering">Engineering</a>
+      <a href="/#approach">Approach</a>
+      <a href="/#why">Why us</a>
       <a href="/blog/"{mark('blog')}>Blog</a>
     </div>
-    <a href="/#contact" class="cta-nav">Get in touch</a>
+    <a href="mailto:jon@productlabs.nl" class="cta-nav">Book a call</a>
   </nav>
 """
 

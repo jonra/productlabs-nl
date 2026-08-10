@@ -4,11 +4,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --ink:    #0d0d0d;
-  --paper:  #f5f3ee;
-  --accent: #d64e12;
-  --muted:  #7a7570;
-  --rule:   #ddd9d2;
+  --ink:    #111111;
+  --paper:  #F3F1ED;
+  --accent: #D97757;
+  --muted:  #5a5650;
+  --rule:   #d8d3c8;
   --code-bg: #14130f;
 }
 
@@ -17,7 +17,7 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   background: var(--paper);
   color: var(--ink);
   min-height: 100vh;
@@ -35,7 +35,7 @@ nav {
   border-bottom: 1px solid var(--rule);
 }
 .logo {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 800; font-size: 1.1rem;
   letter-spacing: -.02em; color: var(--ink); text-decoration: none;
 }
@@ -70,7 +70,7 @@ nav a.cta-nav:hover { color: var(--accent); }
 
 .btn {
   display: inline-block; padding: .85rem 2rem;
-  font-family: 'Syne', sans-serif; font-size: .88rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; font-size: .88rem; font-weight: 700;
   letter-spacing: .04em; text-decoration: none; transition: all .2s;
   border: 2px solid var(--ink);
 }
@@ -94,7 +94,7 @@ nav a.cta-nav:hover { color: var(--accent); }
 }
 .blog-hero .wrap { position: relative; }
 .blog-hero h1 {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: clamp(2.4rem, 5.5vw, 4rem);
   font-weight: 800; line-height: 1.02; letter-spacing: -.03em;
   margin-bottom: 1.25rem; max-width: 16ch;
@@ -125,7 +125,7 @@ nav a.cta-nav:hover { color: var(--accent); }
 .section { padding: 4.5rem 4rem; border-top: 1px solid var(--rule); }
 .section:first-of-type { border-top: none; }
 .section-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: clamp(1.6rem, 3vw, 2.2rem);
   font-weight: 700; letter-spacing: -.02em; margin-bottom: 1rem;
 }
@@ -148,7 +148,7 @@ nav a.cta-nav:hover { color: var(--accent); }
 .featured-side .section-label { color: var(--accent); }
 .featured-side p { font-size: .88rem; font-weight: 300; color: rgba(255,255,255,.65); line-height: 1.7; }
 .featured-main h2 {
-  font-family: 'Syne', sans-serif; font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-family: 'Inter', sans-serif; font-size: clamp(1.5rem, 3vw, 2.1rem);
   font-weight: 700; line-height: 1.15; letter-spacing: -.02em; margin-bottom: 1rem;
 }
 .featured-main h2 a { color: var(--ink); text-decoration: none; }
@@ -165,11 +165,11 @@ nav a.cta-nav:hover { color: var(--accent); }
 }
 .post-item:hover .post-title a { color: var(--accent); }
 .post-num {
-  font-family: 'Syne', sans-serif; font-size: .75rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; font-size: .75rem; font-weight: 700;
   letter-spacing: .1em; color: var(--rule); padding-top: .35rem;
 }
 .post-title {
-  font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; font-size: 1.2rem; font-weight: 700;
   line-height: 1.3; letter-spacing: -.01em; margin-bottom: .6rem;
 }
 .post-title a { color: var(--ink); text-decoration: none; transition: color .2s; }
@@ -198,7 +198,7 @@ nav a.cta-nav:hover { color: var(--accent); }
 .breadcrumb a:hover { color: var(--accent); }
 .breadcrumb .sep { margin: 0 .5rem; opacity: .5; }
 .article-head h1 {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: clamp(2rem, 4.5vw, 3.1rem);
   font-weight: 800; line-height: 1.05; letter-spacing: -.03em;
   margin-bottom: 1.25rem;
@@ -221,13 +221,13 @@ nav a.cta-nav:hover { color: var(--accent); }
 
 /* Article typography */
 .article-body h2 {
-  font-family: 'Syne', sans-serif; font-size: clamp(1.4rem, 2.6vw, 1.85rem);
+  font-family: 'Inter', sans-serif; font-size: clamp(1.4rem, 2.6vw, 1.85rem);
   font-weight: 700; letter-spacing: -.02em; line-height: 1.2;
   margin: 3.25rem 0 1rem; padding-top: .5rem;
 }
 .article-body h2:first-child { margin-top: 0; }
 .article-body h3 {
-  font-family: 'Syne', sans-serif; font-size: 1.12rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; font-size: 1.12rem; font-weight: 700;
   margin: 2.25rem 0 .75rem;
 }
 .article-body p { font-size: 1.02rem; font-weight: 300; line-height: 1.75; margin-bottom: 1.35rem; }
@@ -285,7 +285,7 @@ nav a.cta-nav:hover { color: var(--accent); }
   font-weight: 300; vertical-align: top;
 }
 .article-body th {
-  font-family: 'Syne', sans-serif; font-weight: 700; font-size: .8rem;
+  font-family: 'Inter', sans-serif; font-weight: 700; font-size: .8rem;
   letter-spacing: .04em; text-transform: uppercase;
   border-bottom: 2px solid var(--ink);
 }
@@ -298,20 +298,20 @@ nav a.cta-nav:hover { color: var(--accent); }
 
 .related { border-top: 2px solid var(--ink); padding-top: 2rem; margin-bottom: 3rem; }
 .related h2 {
-  font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; font-size: 1.1rem; font-weight: 700;
   margin-bottom: 1.5rem;
 }
 .related ul { list-style: none; margin: 0; }
 .related li { padding: .9rem 0; border-bottom: 1px solid var(--rule); }
 .related a {
-  font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 700;
   color: var(--ink); text-decoration: none; transition: color .2s;
 }
 .related a:hover { color: var(--accent); }
 .related .rel-dek { font-size: .88rem; font-weight: 300; color: var(--muted); margin-top: .3rem; line-height: 1.6; }
 
 .sources { margin-bottom: 3rem; }
-.sources h2 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
+.sources h2 { font-family: 'Inter', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; }
 .sources ul { list-style: none; margin: 0; }
 .sources li { font-size: .88rem; font-weight: 300; line-height: 1.6; margin-bottom: .6rem; color: var(--muted); }
 .sources a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
@@ -323,7 +323,7 @@ nav a.cta-nav:hover { color: var(--accent); }
   gap: 2rem; flex-wrap: wrap;
 }
 .cta-block h2 {
-  font-family: 'Syne', sans-serif; font-size: 1.35rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; font-size: 1.35rem; font-weight: 700;
   letter-spacing: -.01em; margin-bottom: .5rem;
 }
 .cta-block p { font-size: .92rem; font-weight: 300; color: var(--muted); max-width: 42ch; line-height: 1.65; }
