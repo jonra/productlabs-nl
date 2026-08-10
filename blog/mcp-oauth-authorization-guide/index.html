@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f3ee" />
+  <title>OAuth for Remote MCP Servers: A Current Implementation Guide</title>
+  <meta name="description" content="MCP authorization as the 2026-07-28 spec defines it — Protected Resource Metadata, Client ID Metadata Documents, RFC 8707 resource indicators, and RFC 9207 issuer validation." />
+  <link rel="canonical" href="https://www.productlabs.nl/blog/mcp-oauth-authorization-guide/" />
+  
+  <meta property="og:title" content="OAuth for Remote MCP Servers: A Current Implementation Guide" />
+  <meta property="og:description" content="MCP authorization as the 2026-07-28 spec defines it — Protected Resource Metadata, Client ID Metadata Documents, RFC 8707 resource indicators, and RFC 9207 issuer validation." />
+  <meta property="og:url" content="https://www.productlabs.nl/blog/mcp-oauth-authorization-guide/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_NL" />
+  <meta property="og:site_name" content="ProductLabs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="OAuth for Remote MCP Servers: A Current Implementation Guide" />
+  <meta name="twitter:description" content="MCP authorization as the 2026-07-28 spec defines it — Protected Resource Metadata, Client ID Metadata Documents, RFC 8707 resource indicators, and RFC 9207 issuer validation." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/assets/blog.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "OAuth for remote MCP servers, as the spec defines it today",
+  "description": "Most guides tell you to implement Dynamic Client Registration. The current specification marks it deprecated. Here is the authorization flow MCP actually requires now \u2014 discovery, registration, resource indicators and issuer validation.",
+  "datePublished": "2026-08-06",
+  "dateModified": "2026-08-10",
+  "author": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.productlabs.nl/blog/mcp-oauth-authorization-guide/"
+  },
+  "inLanguage": "en",
+  "keywords": "mcp oauth, mcp authorization, mcp server authentication, protected resource metadata, client id metadata documents, rfc 8707 resource indicator"
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.productlabs.nl/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "https://www.productlabs.nl/blog/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "OAuth for remote MCP servers, as the spec defines it today",
+      "item": "https://www.productlabs.nl/blog/mcp-oauth-authorization-guide/"
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">Product<span>Labs</span></a>
+    <div class="nav-links">
+      <a href="/#services">Services</a>
+      <a href="/#ecosystem">Anthropic ecosystem</a>
+      <a href="/#use-cases">Use cases</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+    </div>
+    <a href="/#contact" class="cta-nav">Get in touch</a>
+  </nav>
+  <article>
+  <header class="article-head">
+    <div class="wrap">
+      <div class="breadcrumb">
+        <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><a href="/blog/topics/mcp/">MCP</a>
+      </div>
+      <h1>OAuth for remote MCP servers, as the spec defines it today</h1>
+      <p class="dek">Most guides tell you to implement Dynamic Client Registration. The current specification marks it deprecated. Here is the authorization flow MCP actually requires now — discovery, registration, resource indicators and issuer validation.</p>
+      <div class="article-meta">
+        <span>6 August 2026</span>
+        <span>Updated 10 August 2026</span>
+        <span>12 min read</span>
+        <a class="topic-tag" href="/blog/topics/mcp/">MCP</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+<div class="callout">
+<span class="callout-label">Verified against the 2026-07-28 specification on 10 August 2026</span>
+<p>MCP's authorization chapter has changed materially between revisions. Several
+widely-shared implementation guides now describe a deprecated registration mechanism.
+Check the current spec before shipping.</p>
+</div>
+
+<p>If you search for how to authenticate an MCP server, most of what you will find tells you
+to implement Dynamic Client Registration. The current specification marks DCR
+<strong>deprecated</strong>, retained only for backwards compatibility with authorization servers that
+do not support the mechanism that replaced it.</p>
+<p>That is the headline correction. There are several others. Here is the flow as the
+<code>2026-07-28</code> revision actually defines it.</p>
+<h2>When authorization applies at all</h2>
+<p>Authorization is <strong>optional</strong> for MCP implementations. When you do implement it:</p>
+<ul>
+<li>HTTP-based transports <strong>should</strong> conform to the authorization specification.</li>
+<li><strong>stdio transports should not.</strong> A stdio server is a subprocess launched by the client;
+  it retrieves credentials from the environment. Bolting OAuth onto stdio is a category
+  error — the trust model is already established by process launch.</li>
+<li>Alternative transports must follow established security practice for their protocol.</li>
+</ul>
+<p>So this article is about remote servers. If you are shipping a local stdio tool, read an
+environment variable and move on.</p>
+<h2>The role mapping</h2>
+<p>MCP maps cleanly onto OAuth 2.1 roles, and getting the mapping straight makes the rest
+follow:</p>
+<ul>
+<li>A protected <strong>MCP server</strong> is an OAuth 2.1 <strong>resource server</strong>.</li>
+<li>An <strong>MCP client</strong> is an OAuth 2.1 <strong>client</strong>.</li>
+<li>The <strong>authorization server</strong> issues tokens. It may be hosted with the resource server or
+  be an entirely separate entity — the spec deliberately leaves its implementation out of
+  scope.</li>
+</ul>
+<p>The specification builds on OAuth 2.1 plus a selected subset of related RFCs. It is not a
+bespoke auth scheme, which means you can use existing OAuth infrastructure. What it adds
+is a set of hard requirements about discovery and audience binding.</p>
+<h2>Discovery is mandatory, in both directions</h2>
+<p>This is where implementations most often fall short of the spec.</p>
+<p><strong>MCP servers must implement OAuth 2.0 Protected Resource Metadata (RFC 9728).</strong> Clients
+<strong>must</strong> use it for authorization server discovery. This is not optional on either side.</p>
+<p>The flow starts with an unauthenticated request. Your server responds <code>401</code> with a
+<code>WWW-Authenticate</code> header pointing at the metadata document:</p>
+<pre><code class="language-http">HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer resource_metadata=&quot;https://mcp.example.com/.well-known/oauth-protected-resource&quot;,
+                         scope=&quot;files:read&quot;
+</code></pre>
+<p>The client fetches that document, extracts the authorization server, and then discovers
+the authorization server's own metadata.</p>
+<p><strong>Authorization servers must provide at least one of</strong> OAuth 2.0 Authorization Server
+Metadata (RFC 8414) or OpenID Connect Discovery 1.0. <strong>Clients must support both</strong>,
+trying the discovery endpoints in priority order. You do not get to pick one and ignore
+the other on the client side.</p>
+<h2>Client registration, in priority order</h2>
+<p>Before starting the flow, a client needs a client ID. The specification defines three
+mechanisms and a clear preference order:</p>
+<ol>
+<li><strong>Client ID Metadata Documents</strong> — authorization servers and clients <strong>should</strong> support
+   this. The client uses an HTTPS URL as its <code>client_id</code>; the authorization server detects
+   the URL form, fetches the metadata document from it, and validates the metadata and
+   redirect URIs.</li>
+<li><strong>Pre-registration</strong> — use an existing <code>client_id</code> you were issued out of band.</li>
+<li><strong>Dynamic Client Registration (RFC 7591)</strong> — <strong>may</strong> be supported, and is <strong>deprecated</strong>.
+   It exists for authorization servers that do not yet support Client ID Metadata Documents.</li>
+</ol>
+<p>If you are writing a new client today, implement Client ID Metadata Documents first and
+treat DCR as the compatibility fallback. That is the inverse of what most existing guides
+recommend, and it is the change most likely to bite anyone copying an older implementation.</p>
+<h2>The resource parameter is not optional</h2>
+<p>MCP clients <strong>must</strong> implement Resource Indicators for OAuth 2.0 (RFC 8707). The
+<code>resource</code> parameter:</p>
+<ul>
+<li><strong>must</strong> appear in both the authorization request and the token request,</li>
+<li><strong>must</strong> identify the MCP server the token is intended for,</li>
+<li><strong>must</strong> use the canonical URI of that server.</li>
+</ul>
+<p>And critically: clients <strong>must</strong> send it regardless of whether the authorization server
+supports it.</p>
+<p>This is the mechanism that stops a token issued for one MCP server being replayed against
+another. It is the backbone of the spec's audience-binding model, and skipping it because
+"our AS ignores it anyway" defeats the protection for every server that does check.</p>
+<p>The canonical URI rules cause real bugs, so they are worth memorising:</p>
+<p><strong>Valid:</strong> <code>https://mcp.example.com/mcp</code>, <code>https://mcp.example.com</code>,
+<code>https://mcp.example.com:8443</code>, <code>https://mcp.example.com/server/mcp</code> where the path is
+needed to identify an individual server.</p>
+<p><strong>Invalid:</strong> <code>mcp.example.com</code> (no scheme), <code>https://mcp.example.com#fragment</code> (fragments
+are not allowed).</p>
+<p>Use the most specific URI you can. Prefer the form without a trailing slash unless the
+slash is semantically significant. Clients should send lowercase scheme and host, but
+implementations should accept uppercase for robustness.</p>
+<pre><code>&amp;resource=https%3A%2F%2Fmcp.example.com
+</code></pre>
+<h2>Issuer validation, and the normalisation trap</h2>
+<p>Before redirecting the user agent, the client <strong>must</strong> record the <code>issuer</code> value from the
+selected authorization server's validated metadata, stored alongside the PKCE code
+verifier for that request. The validation that follows is worthless if the expected issuer
+came from an unvalidated source.</p>
+<p>Authorization servers <strong>should</strong> include the <code>iss</code> parameter in authorization responses,
+including error responses, and advertise this by setting
+<code>authorization_response_iss_parameter_supported</code> to <code>true</code> in their metadata.</p>
+<p>On receiving the authorization response, the client must validate before sending the code
+to any token endpoint:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th><code>..._iss_parameter_supported</code></th>
+<th><code>iss</code> present?</th>
+<th>Client action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>true</code></td>
+<td>yes</td>
+<td>Compare against recorded issuer</td>
+</tr>
+<tr>
+<td><code>true</code></td>
+<td>no</td>
+<td><strong>Reject</strong></td>
+</tr>
+<tr>
+<td><code>false</code> or absent</td>
+<td>yes</td>
+<td>Compare against recorded issuer</td>
+</tr>
+<tr>
+<td><code>false</code> or absent</td>
+<td>no</td>
+<td>Proceed</td>
+</tr>
+</tbody>
+</table></div>
+<p>The third row is deliberate: compare a present <code>iss</code> regardless of what the metadata
+advertised, to accommodate servers that started emitting <code>iss</code> before updating their
+metadata document.</p>
+<p>Now the trap. After decoding the <code>iss</code> value from the form-encoded response, clients
+<strong>must not</strong> apply scheme or host case folding, default-port elision, trailing-slash
+normalisation, or percent-encoding normalisation before comparing. Simple string
+comparison, nothing else.</p>
+<p>If you reach for a URL library here, it will helpfully normalise the value and you will
+have silently weakened the check. Compare the raw decoded strings.</p>
+<p>This validation applies to error responses too — on mismatch, the client must not act on
+or even display <code>error</code>, <code>error_description</code> or <code>error_uri</code>. An attacker-controlled error
+description rendered in your UI is a phishing surface.</p>
+<h2>Scopes, and asking for the right ones</h2>
+<p>Servers <strong>should</strong> include a <code>scope</code> parameter in the <code>WWW-Authenticate</code> challenge to
+indicate what the resource needs. Clients should follow least privilege:</p>
+<ol>
+<li>Use the <code>scope</code> from the initial <code>WWW-Authenticate</code> header if provided.</li>
+<li>Otherwise use <code>scopes_supported</code> from the Protected Resource Metadata, omitting <code>scope</code>
+   entirely if that field is undefined.</li>
+</ol>
+<p>The challenged scope set has no guaranteed relationship to <code>scopes_supported</code> — it may be
+a subset, a superset, or neither. Clients <strong>must not</strong> assume one and <strong>must</strong> treat the
+challenge as authoritative for the current operation. <code>scopes_supported</code> is intended to
+represent the minimal set needed for basic functionality, with more requested
+incrementally.</p>
+<h2>Step-up authorization</h2>
+<p>When a client has a token but needs more permission, the server should respond:</p>
+<pre><code class="language-http">HTTP/1.1 403 Forbidden
+WWW-Authenticate: Bearer error=&quot;insufficient_scope&quot;,
+                         scope=&quot;files:write&quot;,
+                         resource_metadata=&quot;https://mcp.example.com/.well-known/oauth-protected-resource&quot;,
+                         error_description=&quot;File write permission required for this operation&quot;
+</code></pre>
+<p>The client then:</p>
+<ol>
+<li>Parses the error information.</li>
+<li>Computes the <strong>union</strong> of its previously requested scopes and the challenged scopes.
+   This is the step people miss — servers are not required to include previously granted
+   scopes in the challenge, so requesting only the challenged scope can silently drop
+   permissions the client still needs.</li>
+<li>Re-authorizes with that union.</li>
+<li>Retries the original request, no more than a few times, then treats it as permanent
+   failure.</li>
+</ol>
+<p>On the server side: include <strong>all</strong> scopes required for the current operation in a single
+challenge. Challenging incrementally — one missing scope, then another on retry — forces
+multiple authorization round trips for one operation and produces a genuinely unpleasant
+user experience. Be consistent about your strategy, and account for scope hierarchies
+where a broader scope implies narrower ones.</p>
+<h2>Token handling: the rules that matter most</h2>
+<p>Three requirements carry most of the security weight, and all three are absolute:</p>
+<p><strong>Audience validation.</strong> Servers must validate that access tokens were issued specifically
+for them as the intended audience. A token that is valid but was minted for a different
+resource must be rejected.</p>
+<p><strong>No token forwarding.</strong> Servers must only accept tokens valid for their own resources,
+and <strong>must not accept or transit any other tokens</strong>. If your MCP server takes a token and
+passes it downstream to another API, you have built a confused deputy.</p>
+<p><strong>No tokens in URLs.</strong> Access tokens go in the <code>Authorization: Bearer</code> header, on every
+request, and must not appear in the query string.</p>
+<p>Error responses are conventional: <code>401</code> for missing or invalid tokens, <code>403</code> for
+insufficient scope, <code>400</code> for a malformed request.</p>
+<h2>Refresh tokens</h2>
+<p>A small detail with a practical consequence: MCP servers acting as protected resources
+<strong>should not</strong> include <code>offline_access</code> in the <code>WWW-Authenticate</code> scope or in
+<code>scopes_supported</code>. Refresh tokens are not a resource requirement — they are a
+client–authorization-server concern.</p>
+<p>Clients that want refresh tokens should include <code>refresh_token</code> in their <code>grant_types</code>
+metadata, may add <code>offline_access</code> to the scope when the authorization server advertises
+it, and must not assume refresh tokens will be issued at all. The authorization server
+retains discretion.</p>
+<h2>Implementation checklist</h2>
+<p><strong>Server side</strong></p>
+<ul>
+<li>Serve a Protected Resource Metadata document at the well-known path</li>
+<li>Return <code>401</code> with <code>resource_metadata</code> and a <code>scope</code> hint</li>
+<li>Validate token audience against your canonical URI, and reject anything else</li>
+<li>Never forward a received token to another service</li>
+<li>Return <code>403</code> with <code>insufficient_scope</code> and the complete required scope set</li>
+<li>Keep <code>offline_access</code> out of your advertised scopes</li>
+</ul>
+<p><strong>Client side</strong></p>
+<ul>
+<li>Use Protected Resource Metadata for discovery — do not hardcode endpoints</li>
+<li>Support both RFC 8414 and OIDC discovery</li>
+<li>Prefer Client ID Metadata Documents; fall back to DCR only when necessary</li>
+<li>Send <code>resource</code> on both authorization and token requests, always</li>
+<li>Record the expected issuer with the PKCE verifier, and compare raw strings</li>
+<li>Compute the scope union on step-up</li>
+<li>Cap retries and track scope upgrade attempts per resource and operation</li>
+</ul>
+<h2>The short version</h2>
+<p>MCP authorization is OAuth 2.1 with three additions that carry the security model:
+mandatory metadata-based discovery, mandatory resource indicators for audience binding,
+and strict issuer validation with no normalisation. Get those three right and the rest is
+ordinary OAuth. Get them wrong and you have built something that looks like OAuth and
+protects considerably less.</p>
+    </div>
+  </div>
+
+  <div class="article-foot">
+    <div class="wrap">
+      <div class="related">
+        <h2>Related reading</h2>
+        <ul>
+          <li><a href="/blog/mcp-2026-07-28-migration-stateless-protocol/">MCP without initialize — migrating to the 2026-07-28 revision</a><div class="rel-dek">The current MCP revision removes the initialize handshake entirely. Servers are stateless, every request carries its own protocol version, and most of the MCP material on the internet now describes a legacy protocol.</div></li>
+          <li><a href="/blog/mcp-transports-stdio-vs-streamable-http/">stdio or Streamable HTTP — choosing an MCP transport</a><div class="rel-dek">There are two standard MCP transports, and SSE is not one of them any more. What each binding actually guarantees, how cancellation differs, and the deployment constraints that make the choice for you.</div></li>
+          <li><a href="/blog/prompt-injection-tool-using-agents/">Prompt injection in tool-using agents — a worked example</a><div class="rel-dek">We found a hidden instruction block on a live marketing site while reviewing it. On a page with no agent reading it, that payload does nothing. Point an agent with tools at it and it becomes an instruction.</div></li>
+        </ul>
+      </div>
+      <div class="sources">
+        <h2>Sources</h2>
+        <ul>
+          <li><a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization" rel="noopener">MCP specification 2026-07-28 — Authorization</a></li>
+          <li><a href="https://datatracker.ietf.org/doc/html/rfc9728" rel="noopener">RFC 9728 — OAuth 2.0 Protected Resource Metadata</a></li>
+          <li><a href="https://www.rfc-editor.org/rfc/rfc8707.html" rel="noopener">RFC 8707 — Resource Indicators for OAuth 2.0</a></li>
+          <li><a href="https://datatracker.ietf.org/doc/html/rfc9207" rel="noopener">RFC 9207 — OAuth 2.0 Authorization Server Issuer Identification</a></li>
+        </ul>
+      </div>
+      <div class="cta-block">
+        <div>
+          <h2>Working on something like this?</h2>
+          <p>We build Claude integrations, MCP servers and agentic workflows for
+             startups and SMBs in the Netherlands and across the EU.</p>
+        </div>
+        <a href="/#contact" class="btn btn-primary">Book a free consult</a>
+      </div>
+    </div>
+  </div>
+  </article>
+
+  <footer>
+    <span>&copy; 2026 Product Labs B.V. &middot; Amsterdam, The Netherlands</span>
+    <span><a href="/blog/">Blog</a> &middot; <a href="mailto:jon@productlabs.nl">jon@productlabs.nl</a></span>
+  </footer>
+</body>
+</html>

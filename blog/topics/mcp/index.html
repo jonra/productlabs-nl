@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f3ee" />
+  <title>Model Context Protocol — ProductLabs Blog</title>
+  <meta name="description" content="Building, securing and shipping MCP servers — the protocol that connects Claude to real systems." />
+  <link rel="canonical" href="https://www.productlabs.nl/blog/topics/mcp/" />
+  
+  <meta property="og:title" content="Model Context Protocol — ProductLabs Blog" />
+  <meta property="og:description" content="Building, securing and shipping MCP servers — the protocol that connects Claude to real systems." />
+  <meta property="og:url" content="https://www.productlabs.nl/blog/topics/mcp/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_NL" />
+  <meta property="og:site_name" content="ProductLabs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Model Context Protocol — ProductLabs Blog" />
+  <meta name="twitter:description" content="Building, securing and shipping MCP servers — the protocol that connects Claude to real systems." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/assets/blog.css" />
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">Product<span>Labs</span></a>
+    <div class="nav-links">
+      <a href="/#services">Services</a>
+      <a href="/#ecosystem">Anthropic ecosystem</a>
+      <a href="/#use-cases">Use cases</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+    </div>
+    <a href="/#contact" class="cta-nav">Get in touch</a>
+  </nav>
+  <header class="blog-hero">
+    <div class="wrap">
+      <div class="breadcrumb" style="margin-bottom:1.25rem">
+        <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a>
+        <span class="sep">/</span>MCP
+      </div>
+      <h1>Model Context Protocol</h1>
+      <p class="sub">Building, securing and shipping MCP servers — the protocol that connects Claude to real systems.</p>
+    </div>
+  </header>
+
+  <div class="topic-bar">
+    <div class="wrap">
+      <a href="/blog/" class="topic-chip">All</a>
+      <a href="/blog/topics/mcp/" class="topic-chip" aria-current="page">MCP<span class="count">6</span></a>
+      <a href="/blog/topics/claude-api/" class="topic-chip">Claude API<span class="count">2</span></a>
+      <a href="/blog/topics/security/" class="topic-chip">Security<span class="count">1</span></a>
+      <a href="/blog/topics/compliance/" class="topic-chip">Compliance<span class="count">1</span></a>
+    </div>
+  </div>
+  <div class="section">
+    <div class="wrap">
+      <div class="post-list">
+        <div class="post-item">
+          <div class="post-num">01</div>
+          <div>
+            <h3 class="post-title"><a href="/blog/testing-debugging-mcp-servers/">Testing and debugging MCP servers before you ship</a> <span class="badge-new">New</span></h3>
+            <p class="post-dek">Three layers need testing and most teams only cover one. A working pytest suite you can copy, including the protocol conformance checks the current revision made necessary.</p>
+          </div>
+          <div class="post-meta">
+            <span class="topic-tag">MCP</span>
+            <span>10 August 2026</span><br />
+            <span>9 min read</span>
+          </div>
+        </div>
+        <div class="post-item">
+          <div class="post-num">02</div>
+          <div>
+            <h3 class="post-title"><a href="/blog/mcp-oauth-authorization-guide/">OAuth for remote MCP servers, as the spec defines it today</a></h3>
+            <p class="post-dek">Most guides tell you to implement Dynamic Client Registration. The current specification marks it deprecated. Here is the authorization flow MCP actually requires now — discovery, registration, resource indicators and issuer validation.</p>
+          </div>
+          <div class="post-meta">
+            <span class="topic-tag">MCP</span>
+            <span>6 August 2026</span><br />
+            <span>12 min read</span>
+          </div>
+        </div>
+        <div class="post-item">
+          <div class="post-num">03</div>
+          <div>
+            <h3 class="post-title"><a href="/blog/mcp-transports-stdio-vs-streamable-http/">stdio or Streamable HTTP — choosing an MCP transport</a></h3>
+            <p class="post-dek">There are two standard MCP transports, and SSE is not one of them any more. What each binding actually guarantees, how cancellation differs, and the deployment constraints that make the choice for you.</p>
+          </div>
+          <div class="post-meta">
+            <span class="topic-tag">MCP</span>
+            <span>1 August 2026</span><br />
+            <span>8 min read</span>
+          </div>
+        </div>
+        <div class="post-item">
+          <div class="post-num">04</div>
+          <div>
+            <h3 class="post-title"><a href="/blog/mcp-2026-07-28-migration-stateless-protocol/">MCP without initialize — migrating to the 2026-07-28 revision</a></h3>
+            <p class="post-dek">The current MCP revision removes the initialize handshake entirely. Servers are stateless, every request carries its own protocol version, and most of the MCP material on the internet now describes a legacy protocol.</p>
+          </div>
+          <div class="post-meta">
+            <span class="topic-tag">MCP</span>
+            <span>29 July 2026</span><br />
+            <span>10 min read</span>
+          </div>
+        </div>
+        <div class="post-item">
+          <div class="post-num">05</div>
+          <div>
+            <h3 class="post-title"><a href="/blog/mcp-tool-definition-token-cost/">What your MCP tool definitions cost on every single request</a></h3>
+            <p class="post-dek">Tool definitions sit in the context window before the user has typed anything, on every request, forever. Here is a script that measures the bill — and the reason a one-character change to a description can invalidate your entire cache.</p>
+          </div>
+          <div class="post-meta">
+            <span class="topic-tag">MCP</span>
+            <span>20 July 2026</span><br />
+            <span>8 min read</span>
+          </div>
+        </div>
+        <div class="post-item">
+          <div class="post-num">06</div>
+          <div>
+            <h3 class="post-title"><a href="/blog/mcp-tool-schema-design/">Designing MCP tool schemas a model actually uses correctly</a></h3>
+            <p class="post-dek">The model never sees your implementation. It sees a name, a description and a JSON Schema — and that is the entire interface. Most tool-calling failures are interface design problems wearing a model&#x27;s clothes.</p>
+          </div>
+          <div class="post-meta">
+            <span class="topic-tag">MCP</span>
+            <span>12 July 2026</span><br />
+            <span>9 min read</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="cta-block">
+        <div>
+          <h2>Working on something like this?</h2>
+          <p>We build Claude integrations, MCP servers and agentic workflows for
+             startups and SMBs in the Netherlands and across the EU.</p>
+        </div>
+        <a href="/#contact" class="btn btn-primary">Book a free consult</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>&copy; 2026 Product Labs B.V. &middot; Amsterdam, The Netherlands</span>
+    <span><a href="/blog/">Blog</a> &middot; <a href="mailto:jon@productlabs.nl">jon@productlabs.nl</a></span>
+  </footer>
+</body>
+</html>

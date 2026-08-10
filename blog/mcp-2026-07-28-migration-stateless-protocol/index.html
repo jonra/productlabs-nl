@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f3ee" />
+  <title>MCP Without initialize: Migrating to the 2026-07-28 Revision</title>
+  <meta name="description" content="The 2026-07-28 MCP revision drops the initialize handshake and makes servers stateless. What changed, what breaks, and how to build a server that serves both eras." />
+  <link rel="canonical" href="https://www.productlabs.nl/blog/mcp-2026-07-28-migration-stateless-protocol/" />
+  
+  <meta property="og:title" content="MCP Without initialize: Migrating to the 2026-07-28 Revision" />
+  <meta property="og:description" content="The 2026-07-28 MCP revision drops the initialize handshake and makes servers stateless. What changed, what breaks, and how to build a server that serves both eras." />
+  <meta property="og:url" content="https://www.productlabs.nl/blog/mcp-2026-07-28-migration-stateless-protocol/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_NL" />
+  <meta property="og:site_name" content="ProductLabs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="MCP Without initialize: Migrating to the 2026-07-28 Revision" />
+  <meta name="twitter:description" content="The 2026-07-28 MCP revision drops the initialize handshake and makes servers stateless. What changed, what breaks, and how to build a server that serves both eras." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/assets/blog.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "MCP without initialize \u2014 migrating to the 2026-07-28 revision",
+  "description": "The current MCP revision removes the initialize handshake entirely. Servers are stateless, every request carries its own protocol version, and most of the MCP material on the internet now describes a legacy protocol.",
+  "datePublished": "2026-07-29",
+  "dateModified": "2026-08-10",
+  "author": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.productlabs.nl/blog/mcp-2026-07-28-migration-stateless-protocol/"
+  },
+  "inLanguage": "en",
+  "keywords": "mcp 2026-07-28, mcp initialize deprecated, mcp protocol version negotiation, mcp legacy vs modern, server/discover, UnsupportedProtocolVersionError"
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.productlabs.nl/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "https://www.productlabs.nl/blog/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "MCP without initialize \u2014 migrating to the 2026-07-28 revision",
+      "item": "https://www.productlabs.nl/blog/mcp-2026-07-28-migration-stateless-protocol/"
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">Product<span>Labs</span></a>
+    <div class="nav-links">
+      <a href="/#services">Services</a>
+      <a href="/#ecosystem">Anthropic ecosystem</a>
+      <a href="/#use-cases">Use cases</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+    </div>
+    <a href="/#contact" class="cta-nav">Get in touch</a>
+  </nav>
+  <article>
+  <header class="article-head">
+    <div class="wrap">
+      <div class="breadcrumb">
+        <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><a href="/blog/topics/mcp/">MCP</a>
+      </div>
+      <h1>MCP without initialize — migrating to the 2026-07-28 revision</h1>
+      <p class="dek">The current MCP revision removes the initialize handshake entirely. Servers are stateless, every request carries its own protocol version, and most of the MCP material on the internet now describes a legacy protocol.</p>
+      <div class="article-meta">
+        <span>29 July 2026</span>
+        <span>Updated 10 August 2026</span>
+        <span>10 min read</span>
+        <a class="topic-tag" href="/blog/topics/mcp/">MCP</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+<div class="callout">
+<span class="callout-label">Verified against the 2026-07-28 specification on 10 August 2026</span>
+<p>MCP revisions have changed the protocol's shape more than once. If you are reading
+this well after the date above, check the current specification before implementing.</p>
+</div>
+
+<p>If you learned MCP from a tutorial, a conference talk, or an SDK example, there is a good
+chance you learned a protocol that the current specification calls <strong>legacy</strong>.</p>
+<p>The <code>2026-07-28</code> revision removes the <code>initialize</code> handshake. There is no negotiation
+step, no connection-scoped session, and servers no longer initiate JSON-RPC requests.
+Every request carries its own protocol version, and the server accepts or rejects each
+one independently.</p>
+<p>This is not a cosmetic change. It alters how you write a server, how you write a client,
+and what "connected" even means.</p>
+<h2>What actually changed</h2>
+<p>The specification's own terminology is the clearest way in:</p>
+<ul>
+<li><strong>Modern</strong> — protocol versions that convey version, identity and capabilities as
+  per-request metadata. Revision <code>2026-07-28</code> and later.</li>
+<li><strong>Legacy</strong> — protocol versions that establish a session with an <code>initialize</code>
+  handshake. Revision <code>2025-11-25</code> and earlier.</li>
+<li><strong>Dual-era</strong> — an implementation supporting both.</li>
+</ul>
+<p>Three concrete consequences follow.</p>
+<p><strong>There is no negotiation handshake.</strong> Every request declares its protocol version in its
+<code>_meta</code> field. The server either supports that version and answers, or rejects that
+request. Nothing is agreed up front.</p>
+<p><strong>Servers are stateless by default.</strong> Because there is no session, a modern request is
+served on its own terms. This is a significant simplification for horizontally scaled
+deployments — no session affinity, no shared session store, no reconnection dance.</p>
+<p><strong>Message direction is constrained.</strong> Servers do not initiate JSON-RPC requests, and
+clients do not send JSON-RPC responses. A binding delivers client requests and
+notifications to the server, and server responses and notifications to the client. That
+is the entire set of directions. If your design assumed a server could call back into the
+client mid-session, that assumption no longer holds in the core protocol.</p>
+<h2>Per-request metadata</h2>
+<p>Protocol metadata travels in the message body. Every request carries its protocol version
+and client capabilities in <code>_meta.io.modelcontextprotocol/*</code> fields.</p>
+<p>On Streamable HTTP, the version is additionally mirrored into an <code>MCP-Protocol-Version</code>
+header, so that proxies and gateways can route and inspect requests without parsing the
+body. The body remains the source of truth; the binding defines how mismatches are
+rejected.</p>
+<p>That mirroring is worth noticing if you run anything in front of your MCP server. It is
+the difference between a load balancer that can route by protocol version and one that
+has to buffer and parse every request.</p>
+<h2>Version rejection and retry</h2>
+<p>When a server does not implement the requested version — whether it is unknown to the
+server, or a known version the server has chosen not to support — it must respond with
+<code>UnsupportedProtocolVersionError</code>, listing what it does support:</p>
+<pre><code class="language-json">{
+  &quot;jsonrpc&quot;: &quot;2.0&quot;,
+  &quot;id&quot;: 1,
+  &quot;error&quot;: {
+    &quot;code&quot;: -32022,
+    &quot;message&quot;: &quot;Unsupported protocol version&quot;,
+    &quot;data&quot;: {
+      &quot;supported&quot;: [&quot;2026-07-28&quot;, &quot;2025-11-25&quot;],
+      &quot;requested&quot;: &quot;1900-01-01&quot;
+    }
+  }
+}
+</code></pre>
+<p>The client should then select a mutually supported version from <code>supported</code> and retry, or
+surface an actionable error if there is no overlap.</p>
+<p>This is the single most important behaviour to get right on both sides. A client that
+treats <code>-32022</code> as a generic failure will present users with an opaque error when the fix
+was mechanical. A server that returns a bare error without the <code>supported</code> list leaves
+clients with nothing to retry against.</p>
+<h2>server/discover</h2>
+<p>Servers <strong>must</strong> implement <code>server/discover</code>. Clients <strong>may</strong> call it before sending
+anything else to learn the server's supported versions up front — but they are not
+required to. A client is free to invoke any RPC inline and handle
+<code>UnsupportedProtocolVersionError</code> if its preferred version is not supported.</p>
+<p>That "may" is doing real work. It means <code>server/discover</code> is a diagnostic and
+optimisation tool, not a replacement handshake. Do not rebuild <code>initialize</code> out of it by
+requiring a discover call before every session — that reintroduces exactly the round trip
+the revision removed.</p>
+<p>Where it genuinely earns its place is era detection, which is the next problem.</p>
+<h2>Interoperating with legacy implementations</h2>
+<p>You will be talking to legacy implementations for a long time. The specification defines
+the compatibility surface precisely, and the results are asymmetric:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Client</th>
+<th>Server</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modern</td>
+<td>Modern</td>
+<td>Works</td>
+</tr>
+<tr>
+<td>Modern</td>
+<td>Legacy</td>
+<td><strong>Fails</strong></td>
+</tr>
+<tr>
+<td>Dual-era</td>
+<td>Modern</td>
+<td>Works</td>
+</tr>
+<tr>
+<td>Dual-era</td>
+<td>Legacy</td>
+<td>Works</td>
+</tr>
+<tr>
+<td>Legacy</td>
+<td>Modern</td>
+<td><strong>Fails</strong></td>
+</tr>
+<tr>
+<td>Legacy</td>
+<td>Dual-era</td>
+<td>Works</td>
+</tr>
+<tr>
+<td>Legacy</td>
+<td>Legacy</td>
+<td>Works, per the legacy revision</td>
+</tr>
+</tbody>
+</table></div>
+<p>Two rows deserve attention.</p>
+<p><strong>Modern client, legacy server fails</strong>, and it can fail badly. The server may reject the
+request with an implementation-defined error, stay silent, or — worst case — process an
+era-ambiguous method under legacy semantics. On stdio, clients should send
+<code>server/discover</code> first specifically so this fails deterministically rather than
+ambiguously.</p>
+<p><strong>Legacy client, modern server fails with no recovery.</strong> Legacy clients have no
+fall-forward mechanism. This is why the specification says a modern-only server <em>should</em>
+name the protocol versions it supports in any error it returns to an <code>initialize</code> request,
+on any transport. That error message may be the only diagnostic a legacy client can put
+in front of a user. It costs you three lines and saves someone an afternoon.</p>
+<h2>Detecting a server's era</h2>
+<p>Era is a property of the server, not of an individual request. Detect it once, cache it
+for the lifetime of the server process (stdio) or origin (HTTP), and optionally persist it
+across restarts of the same configuration — re-probing if the cached assumption later
+fails.</p>
+<p>The mechanics are transport-specific:</p>
+<p><strong>stdio</strong> — probe with <code>server/discover</code> and fall back to legacy on any error that is not
+a recognised modern error.</p>
+<p><strong>Streamable HTTP</strong> — attempt a modern request and inspect the body of a <code>400 Bad Request</code>
+before falling back.</p>
+<p>In both cases the rule is the same: a recognised modern JSON-RPC error such as
+<code>UnsupportedProtocolVersionError</code> identifies a <em>modern</em> server. The client should then
+retry with a supported version rather than falling back to legacy. Anything else — an
+unrecognised error, silence, a timeout — identifies a legacy server.</p>
+<p>That distinction is the one implementations get wrong. <code>UnsupportedProtocolVersionError</code>
+is not a failure signal, it is a success signal about the server's era carrying a
+correction about the version.</p>
+<pre><code class="language-python">MODERN_ERROR_CODES = {-32022}  # UnsupportedProtocolVersionError
+
+def detect_era_stdio(conn) -&gt; str:
+    &quot;&quot;&quot;Probe once, per server process. Cache the answer.&quot;&quot;&quot;
+    try:
+        result = conn.request(&quot;server/discover&quot;)
+    except JsonRpcError as e:
+        # A recognised modern error still means the server is modern —
+        # it is telling us which versions it speaks.
+        return &quot;modern&quot; if e.code in MODERN_ERROR_CODES else &quot;legacy&quot;
+    except (TimeoutError, TransportError):
+        return &quot;legacy&quot;
+    return &quot;modern&quot; if result is not None else &quot;legacy&quot;
+</code></pre>
+<h2>Building a dual-era server</h2>
+<p>A server that wants to serve both eras may implement both behaviours, and may serve them
+concurrently on the same endpoint or process. It selects behaviour from how the client
+opens:</p>
+<ul>
+<li>A request carrying modern per-request <code>_meta</code> is served statelessly, per the current
+  revision.</li>
+<li>An <code>initialize</code> request selects legacy semantics, scoped to the stdio process or the
+  HTTP session, per the negotiated legacy protocol version.</li>
+</ul>
+<p>The design implication is that your handler logic should not assume session state exists.
+Write the tool implementations against a stateless model, then let the legacy path
+maintain whatever session bookkeeping the older revision requires around them. Doing it
+the other way round — building on session state and trying to fake it for modern requests —
+produces a server that is hard to scale and hard to reason about.</p>
+<h2>Extensions replace capability sprawl</h2>
+<p>Optional functionality beyond the core protocol is negotiated through an <code>extensions</code> map
+in capabilities: extension identifiers mapped to per-extension settings objects.
+Identifiers must follow the <code>_meta</code> key naming rules, including a mandatory prefix.</p>
+<pre><code class="language-json">{
+  &quot;capabilities&quot;: {
+    &quot;tools&quot;: {},
+    &quot;extensions&quot;: {
+      &quot;io.modelcontextprotocol/tasks&quot;: {}
+    }
+  }
+}
+</code></pre>
+<p>An empty settings object means "supported, no additional settings". If one party supports
+an extension and the other does not, the supporting party must either revert to core
+protocol behaviour or reject the request with an appropriate error — and extensions should
+document which of those they expect.</p>
+<p>The practical guidance: build on the core protocol, treat every extension as optional, and
+make sure your fallback path is tested rather than theoretical.</p>
+<h2>Migration checklist</h2>
+<p>If you have an existing MCP server:</p>
+<ol>
+<li><strong>Decide your era support.</strong> Modern-only is simpler. Dual-era is what you need if you
+   have users on older clients you do not control.</li>
+<li><strong>Remove session assumptions</strong> from tool handlers. Anything stored between calls needs
+   an explicit home.</li>
+<li><strong>Implement <code>server/discover</code>.</strong> It is mandatory, and it is what well-behaved clients
+   probe with.</li>
+<li><strong>Return proper <code>UnsupportedProtocolVersionError</code></strong> responses with a populated
+   <code>supported</code> list.</li>
+<li><strong>If modern-only, name your supported versions</strong> in the error you return to
+   <code>initialize</code>. Legacy clients cannot recover, but their users can at least be told why.</li>
+<li><strong>Read <code>_meta</code> for the protocol version</strong>, and on HTTP decide how you handle a
+   mismatch between the header and the body.</li>
+<li><strong>Audit for server-initiated requests.</strong> If you had any, they need redesigning.</li>
+<li><strong>Test the era matrix</strong>, not just the happy path. Both failing combinations should fail
+   in the way the specification describes.</li>
+</ol>
+<h2>Why this is worth doing now</h2>
+<p>The stateless model is a genuine simplification. A modern MCP server is closer to an
+ordinary HTTP service than to a stateful protocol daemon: no session store, no affinity
+requirement, no reconnection semantics. That makes it dramatically easier to deploy behind
+a normal load balancer and to reason about under load.</p>
+<p>The cost is a migration window where the ecosystem is split, and a large body of
+documentation, tutorials and example code that is now describing the previous protocol
+without saying so. When you hit a discrepancy between a blog post and the specification,
+the specification is right and the blog post is probably just older than July.</p>
+    </div>
+  </div>
+
+  <div class="article-foot">
+    <div class="wrap">
+      <div class="related">
+        <h2>Related reading</h2>
+        <ul>
+          <li><a href="/blog/mcp-transports-stdio-vs-streamable-http/">stdio or Streamable HTTP — choosing an MCP transport</a><div class="rel-dek">There are two standard MCP transports, and SSE is not one of them any more. What each binding actually guarantees, how cancellation differs, and the deployment constraints that make the choice for you.</div></li>
+          <li><a href="/blog/mcp-oauth-authorization-guide/">OAuth for remote MCP servers, as the spec defines it today</a><div class="rel-dek">Most guides tell you to implement Dynamic Client Registration. The current specification marks it deprecated. Here is the authorization flow MCP actually requires now — discovery, registration, resource indicators and issuer validation.</div></li>
+          <li><a href="/blog/testing-debugging-mcp-servers/">Testing and debugging MCP servers before you ship</a><div class="rel-dek">Three layers need testing and most teams only cover one. A working pytest suite you can copy, including the protocol conformance checks the current revision made necessary.</div></li>
+        </ul>
+      </div>
+      <div class="sources">
+        <h2>Sources</h2>
+        <ul>
+          <li><a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning" rel="noopener">MCP specification 2026-07-28 — Versioning and Compatibility</a></li>
+          <li><a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/transports" rel="noopener">MCP specification 2026-07-28 — Transports</a></li>
+        </ul>
+      </div>
+      <div class="cta-block">
+        <div>
+          <h2>Working on something like this?</h2>
+          <p>We build Claude integrations, MCP servers and agentic workflows for
+             startups and SMBs in the Netherlands and across the EU.</p>
+        </div>
+        <a href="/#contact" class="btn btn-primary">Book a free consult</a>
+      </div>
+    </div>
+  </div>
+  </article>
+
+  <footer>
+    <span>&copy; 2026 Product Labs B.V. &middot; Amsterdam, The Netherlands</span>
+    <span><a href="/blog/">Blog</a> &middot; <a href="mailto:jon@productlabs.nl">jon@productlabs.nl</a></span>
+  </footer>
+</body>
+</html>

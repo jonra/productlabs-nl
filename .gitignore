@@ -1,0 +1,9 @@
+# OS / editor cruft
+.DS_Store
+.idea/
+
+# Blog build sources — generated HTML is committed and served; sources stay local
+blog/_build/
+
+# Internal / strategy docs — not for the public repo
+*.docx

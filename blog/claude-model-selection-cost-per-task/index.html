@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f3ee" />
+  <title>Claude Model Selection: Cost Per Resolved Task, Not Per Token</title>
+  <meta name="description" content="Why per-token pricing misleads, how to measure cost per resolved task, routing patterns that work, and the Sonnet 5 price change landing 1 September 2026." />
+  <link rel="canonical" href="https://www.productlabs.nl/blog/claude-model-selection-cost-per-task/" />
+  
+  <meta property="og:title" content="Claude Model Selection: Cost Per Resolved Task, Not Per Token" />
+  <meta property="og:description" content="Why per-token pricing misleads, how to measure cost per resolved task, routing patterns that work, and the Sonnet 5 price change landing 1 September 2026." />
+  <meta property="og:url" content="https://www.productlabs.nl/blog/claude-model-selection-cost-per-task/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_NL" />
+  <meta property="og:site_name" content="ProductLabs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Claude Model Selection: Cost Per Resolved Task, Not Per Token" />
+  <meta name="twitter:description" content="Why per-token pricing misleads, how to measure cost per resolved task, routing patterns that work, and the Sonnet 5 price change landing 1 September 2026." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/assets/blog.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Model selection is a cost-per-resolved-task problem, not a price-per-token one",
+  "description": "A model that costs a fifth as much but needs three attempts is not cheaper. Here is how to build the comparison that actually predicts your bill \u2014 and why Sonnet 5's September price change should send you back to it.",
+  "datePublished": "2026-07-24",
+  "dateModified": "2026-08-10",
+  "author": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.productlabs.nl/blog/claude-model-selection-cost-per-task/"
+  },
+  "inLanguage": "en",
+  "keywords": "claude opus vs sonnet vs haiku, claude api cost optimization, claude model selection, claude pricing comparison, model routing llm"
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.productlabs.nl/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "https://www.productlabs.nl/blog/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Model selection is a cost-per-resolved-task problem, not a price-per-token one",
+      "item": "https://www.productlabs.nl/blog/claude-model-selection-cost-per-task/"
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">Product<span>Labs</span></a>
+    <div class="nav-links">
+      <a href="/#services">Services</a>
+      <a href="/#ecosystem">Anthropic ecosystem</a>
+      <a href="/#use-cases">Use cases</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+    </div>
+    <a href="/#contact" class="cta-nav">Get in touch</a>
+  </nav>
+  <article>
+  <header class="article-head">
+    <div class="wrap">
+      <div class="breadcrumb">
+        <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><a href="/blog/topics/claude-api/">Claude API</a>
+      </div>
+      <h1>Model selection is a cost-per-resolved-task problem, not a price-per-token one</h1>
+      <p class="dek">A model that costs a fifth as much but needs three attempts is not cheaper. Here is how to build the comparison that actually predicts your bill — and why Sonnet 5&#x27;s September price change should send you back to it.</p>
+      <div class="article-meta">
+        <span>24 July 2026</span>
+        <span>Updated 10 August 2026</span>
+        <span>10 min read</span>
+        <a class="topic-tag" href="/blog/topics/claude-api/">Claude API</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+<div class="callout">
+<span class="callout-label">Pricing verified 10 August 2026</span>
+<p>Claude Sonnet 5 pricing changes on 1 September 2026. If you are reading this after
+that date, the second table below is the live one.</p>
+</div>
+
+<p>Every few weeks someone shows us a spreadsheet comparing Claude models on price per
+million tokens, with the cheapest option highlighted. It is the wrong comparison, and it
+reliably produces the wrong decision.</p>
+<p>Per-token price tells you what one attempt costs. It tells you nothing about how many
+attempts you need.</p>
+<h2>The arithmetic that matters</h2>
+<p>Consider a task where a cheaper model succeeds 60% of the time and a stronger one succeeds
+95%, with a retry-once-then-escalate policy. The cheap model's <em>effective</em> cost includes
+its failures, the retries, and the escalations those failures trigger. Once you add a
+human reviewing the output of a failed automation, the per-token difference disappears
+entirely — a few minutes of someone's time dwarfs the API spend on either model.</p>
+<p>So the metric is:</p>
+<pre><code>cost per resolved task = (total API spend over a run)
+                       / (number of tasks that met your acceptance bar)
+</code></pre>
+<p>Two things make this honest. <strong>Total spend</strong> must include failed attempts, retries, and
+escalations. And <strong>acceptance bar</strong> has to be defined before you measure, not adjusted
+afterwards to make a number look good.</p>
+<p>That second point is where most internal comparisons quietly fall apart.</p>
+<h2>Current pricing</h2>
+<p>Per million tokens:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Base input</th>
+<th>Cache read</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claude Fable 5</td>
+<td>$10</td>
+<td>$1</td>
+<td>$50</td>
+</tr>
+<tr>
+<td>Claude Opus 5</td>
+<td>$5</td>
+<td>$0.50</td>
+<td>$25</td>
+</tr>
+<tr>
+<td>Claude Opus 4.8</td>
+<td>$5</td>
+<td>$0.50</td>
+<td>$25</td>
+</tr>
+<tr>
+<td>Claude Sonnet 5 <em>(to 31 Aug 2026)</em></td>
+<td>$2</td>
+<td>$0.20</td>
+<td>$10</td>
+</tr>
+<tr>
+<td>Claude Sonnet 5 <em>(from 1 Sep 2026)</em></td>
+<td>$3</td>
+<td>$0.30</td>
+<td>$15</td>
+</tr>
+<tr>
+<td>Claude Sonnet 4.6</td>
+<td>$3</td>
+<td>$0.30</td>
+<td>$15</td>
+</tr>
+<tr>
+<td>Claude Haiku 4.5</td>
+<td>$1</td>
+<td>$0.10</td>
+<td>$5</td>
+</tr>
+</tbody>
+</table></div>
+<p>Two observations before anyone builds a model on this.</p>
+<p><strong>Sonnet 5 rises 50% on input and output on 1 September 2026.</strong> Anyone who chose Sonnet 5
+on price during its introductory window should re-run the comparison now. At $3/$15 it
+sits at the same price as Sonnet 4.6, and the gap to Opus 5 narrows to less than 2×.</p>
+<p><strong>Output tokens cost 5× input across the lineup.</strong> For generation-heavy workloads, output
+dominates. For analysis-heavy workloads with large context and short answers, input and
+caching dominate. These two shapes have genuinely different optimal models, which is why a
+single organisation-wide model choice is usually leaving money on the table.</p>
+<h2>Building the comparison</h2>
+<p>You need an eval set. It does not need to be large — 50 to 100 real examples usually
+separates models clearly enough to decide.</p>
+<p><strong>Draw from production traffic.</strong> Synthetic examples are systematically easier than real
+ones, and they are easier in the specific way that flatters smaller models: cleaner input,
+less ambiguity, fewer edge cases. Sample from real logs, including the ugly ones.</p>
+<p><strong>Define acceptance mechanically where you can.</strong> Exact match, schema validity, does the
+generated code run and pass tests, does the extracted field match the ground truth. Where
+the task is genuinely subjective, use a rubric and a fixed grader, and accept that your
+error bars are wider.</p>
+<p><strong>Record cost per attempt, not just per success.</strong> You need the failures in the numerator.</p>
+<p><strong>Run each model more than once.</strong> These systems are non-deterministic. A single run
+comparing two models can easily invert on a rerun. Three runs and a look at the variance
+is the minimum before you make a routing decision on the result.</p>
+<p>Then the table you actually want looks like this:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th></th>
+<th>Resolution rate</th>
+<th>Attempts per resolution</th>
+<th>Cost per resolved task</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Haiku 4.5</td>
+<td>measure</td>
+<td>measure</td>
+<td>compute</td>
+</tr>
+<tr>
+<td>Sonnet 5</td>
+<td>measure</td>
+<td>measure</td>
+<td>compute</td>
+</tr>
+<tr>
+<td>Opus 5</td>
+<td>measure</td>
+<td>measure</td>
+<td>compute</td>
+</tr>
+</tbody>
+</table></div>
+<p>We are deliberately not filling this in with numbers. Published benchmark figures for
+"which model is cheaper" are close to meaningless across workloads — the answer depends
+entirely on your task shape, your acceptance bar, and your prompt. The point of this
+article is the method, and the method takes an afternoon to run on your own data.</p>
+<h2>Routing patterns that work</h2>
+<p><strong>Cheap-first with escalation.</strong> Try the smaller model, validate the output, escalate on
+failure. Works well when validation is cheap and mechanical — schema checks, test suites,
+constraint verification. Works badly when detecting failure requires the same judgement as
+doing the task, because then you are paying for the strong model anyway.</p>
+<p>The break-even is worth writing down:</p>
+<pre><code>escalation is worth it when:
+    cost(small) + failure_rate × cost(large) &lt; cost(large)
+i.e. when:
+    cost(small) &lt; (1 - failure_rate) × cost(large)
+</code></pre>
+<p>At a 40% failure rate, the small model needs to cost less than 60% of the large one to be
+worth trying first. Haiku against Opus 5 clears that comfortably. Sonnet 5 against Opus 5
+after September — $3 against $5 — does not clear it at a 40% failure rate.</p>
+<p><strong>Classifier routing.</strong> Use a cheap model to triage difficulty, then dispatch. The
+classification call is itself cheap and cacheable. The risk is that classification error
+compounds with task error, so measure the classifier separately.</p>
+<p><strong>Per-stage routing inside an agent loop.</strong> This is where the largest wins usually are,
+and it is underused. A single agent run contains steps with very different difficulty:
+planning and synthesis are hard, while extraction, formatting, summarising a tool result
+and deciding whether output matched a pattern are often easy. Routing per step rather than
+per run frequently cuts cost substantially with no measurable quality change.</p>
+<p><strong>Stage-gated escalation.</strong> Start cheap, escalate only the specific step that failed,
+rather than restarting the whole run on the stronger model. Requires your agent to be
+checkpointed, which is worth doing anyway.</p>
+<h2>Where cheaper models reliably win and lose</h2>
+<p>From deployments we have built, the pattern is consistent enough to be useful as a prior —
+though you should still measure.</p>
+<p><strong>Small models do well at:</strong> structured extraction from clean input, classification into a
+small label set, format conversion, summarising a single document, applying an explicit
+rule you have written out in full, and routing decisions.</p>
+<p><strong>Small models struggle with:</strong> multi-step reasoning where an early error propagates,
+tasks needing judgement about what is relevant, long-context synthesis across many
+documents, generating code that must be correct rather than plausible, and any task where
+the instructions are underspecified and the model must infer intent.</p>
+<p>The mechanism behind that split is worth internalising: smaller models are relatively
+weaker at knowing <em>when they are wrong</em>. In a pipeline with verification, that matters
+less. In an autonomous loop, it compounds.</p>
+<h2>Stack the other levers first</h2>
+<p>Model choice is one of three cost levers, and often not the biggest.</p>
+<p><strong>Prompt caching</strong> cuts input cost to 0.1× for the cached prefix. On a workload with a
+large stable system prompt or tool set, this frequently beats downgrading the model — and
+unlike a model downgrade it costs you nothing in quality. If you have not configured
+caching properly, do that before you touch model selection.</p>
+<p><strong>Batch processing</strong> carries a discount for anything not latency-sensitive. Overnight
+enrichment, backfills, evaluation runs.</p>
+<p><strong>Prompt and tool trimming.</strong> Every request carries your tool definitions. On a
+multi-server MCP deployment that can be a substantial fixed cost per call before the user
+has said anything.</p>
+<p>These stack multiplicatively with each other. A cached, batched, trimmed Sonnet 5 call can
+cost less than a naive Haiku call.</p>
+<h2>A working method</h2>
+<ol>
+<li>Pull 50–100 real tasks from production logs, including the difficult ones.</li>
+<li>Write a mechanical acceptance check, or a fixed rubric where you cannot.</li>
+<li>Run each candidate model three times over the set.</li>
+<li>Record spend including failures and retries; compute cost per resolved task.</li>
+<li>Look at variance across runs before believing any gap.</li>
+<li>Check whether caching or batching changes the ranking — it often does.</li>
+<li>Identify the steps inside your pipeline that differ in difficulty, and route per step.</li>
+<li>Re-run when pricing changes or a new model ships. Which, right now, means before
+   1 September.</li>
+</ol>
+<p>The reason to do this rather than reading someone else's benchmark is that the answer is
+genuinely workload-specific. We have seen the same two models swap places between two
+clients in the same industry, because one was doing extraction and the other was doing
+synthesis. Your data is the only data that answers your question.</p>
+    </div>
+  </div>
+
+  <div class="article-foot">
+    <div class="wrap">
+      <div class="related">
+        <h2>Related reading</h2>
+        <ul>
+          <li><a href="/blog/claude-prompt-caching-guide/">Claude prompt caching — automatic, explicit, and the lookback trap</a><div class="rel-dek">The cache does not find stable content behind your breakpoint. It finds entries earlier requests already wrote. Understanding that one sentence is the difference between an 80% discount and paying a premium on every request.</div></li>
+          <li><a href="/blog/mcp-tool-definition-token-cost/">What your MCP tool definitions cost on every single request</a><div class="rel-dek">Tool definitions sit in the context window before the user has typed anything, on every request, forever. Here is a script that measures the bill — and the reason a one-character change to a description can invalidate your entire cache.</div></li>
+        </ul>
+      </div>
+      <div class="sources">
+        <h2>Sources</h2>
+        <ul>
+          <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" rel="noopener">Claude Platform Docs — Prompt caching and model pricing</a></li>
+        </ul>
+      </div>
+      <div class="cta-block">
+        <div>
+          <h2>Working on something like this?</h2>
+          <p>We build Claude integrations, MCP servers and agentic workflows for
+             startups and SMBs in the Netherlands and across the EU.</p>
+        </div>
+        <a href="/#contact" class="btn btn-primary">Book a free consult</a>
+      </div>
+    </div>
+  </div>
+  </article>
+
+  <footer>
+    <span>&copy; 2026 Product Labs B.V. &middot; Amsterdam, The Netherlands</span>
+    <span><a href="/blog/">Blog</a> &middot; <a href="mailto:jon@productlabs.nl">jon@productlabs.nl</a></span>
+  </footer>
+</body>
+</html>

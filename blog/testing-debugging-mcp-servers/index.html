@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f3ee" />
+  <title>Testing and Debugging MCP Servers Before You Ship</title>
+  <meta name="description" content="A practical test strategy for MCP servers — protocol conformance, schema quality, and tool-selection accuracy — with a pytest suite you can copy." />
+  <link rel="canonical" href="https://www.productlabs.nl/blog/testing-debugging-mcp-servers/" />
+  
+  <meta property="og:title" content="Testing and Debugging MCP Servers Before You Ship" />
+  <meta property="og:description" content="A practical test strategy for MCP servers — protocol conformance, schema quality, and tool-selection accuracy — with a pytest suite you can copy." />
+  <meta property="og:url" content="https://www.productlabs.nl/blog/testing-debugging-mcp-servers/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_NL" />
+  <meta property="og:site_name" content="ProductLabs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Testing and Debugging MCP Servers Before You Ship" />
+  <meta name="twitter:description" content="A practical test strategy for MCP servers — protocol conformance, schema quality, and tool-selection accuracy — with a pytest suite you can copy." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/assets/blog.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Testing and debugging MCP servers before you ship",
+  "description": "Three layers need testing and most teams only cover one. A working pytest suite you can copy, including the protocol conformance checks the current revision made necessary.",
+  "datePublished": "2026-08-10",
+  "dateModified": "2026-08-10",
+  "author": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.productlabs.nl/blog/testing-debugging-mcp-servers/"
+  },
+  "inLanguage": "en",
+  "keywords": "test mcp server, debug mcp server, mcp server errors, mcp conformance testing, pytest mcp"
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.productlabs.nl/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "https://www.productlabs.nl/blog/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Testing and debugging MCP servers before you ship",
+      "item": "https://www.productlabs.nl/blog/testing-debugging-mcp-servers/"
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">Product<span>Labs</span></a>
+    <div class="nav-links">
+      <a href="/#services">Services</a>
+      <a href="/#ecosystem">Anthropic ecosystem</a>
+      <a href="/#use-cases">Use cases</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+    </div>
+    <a href="/#contact" class="cta-nav">Get in touch</a>
+  </nav>
+  <article>
+  <header class="article-head">
+    <div class="wrap">
+      <div class="breadcrumb">
+        <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><a href="/blog/topics/mcp/">MCP</a>
+      </div>
+      <h1>Testing and debugging MCP servers before you ship</h1>
+      <p class="dek">Three layers need testing and most teams only cover one. A working pytest suite you can copy, including the protocol conformance checks the current revision made necessary.</p>
+      <div class="article-meta">
+        <span>10 August 2026</span>
+        <span>9 min read</span>
+        <a class="topic-tag" href="/blog/topics/mcp/">MCP</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+<p>Most MCP servers we review have tests for their business logic and nothing else. The
+business logic is rarely what breaks.</p>
+<p>There are three layers, and they fail in different ways:</p>
+<ol>
+<li><strong>Protocol conformance</strong> — does the server behave the way the specification says,
+   including in the error cases</li>
+<li><strong>Schema quality</strong> — are the tool definitions well-formed, bounded, and stable</li>
+<li><strong>Model-facing behaviour</strong> — given a realistic request, does the model pick the right
+   tool with the right arguments</li>
+</ol>
+<p>Layer one is mechanical and cheap. Layer two is mechanical and almost never done. Layer
+three needs a model in the loop and is where the interesting failures live.</p>
+<h2>Layer 1: protocol conformance</h2>
+<p>The current revision made this more important than it used to be. With no <code>initialize</code>
+handshake, version handling is per-request, and <code>UnsupportedProtocolVersionError</code> is a
+first-class part of your server's contract rather than an edge case.</p>
+<p>Three things must be true and are easy to assert:</p>
+<ul>
+<li><code>server/discover</code> is implemented — it is mandatory</li>
+<li>An unsupported version returns code <code>-32022</code> with a populated <code>supported</code> list and the
+  <code>requested</code> value echoed back</li>
+<li>A request with no version is rejected rather than silently defaulting</li>
+</ul>
+<p>That last one matters. A server that quietly assumes the latest version when <code>_meta</code> is
+absent will appear to work with a broken client and fail confusingly later.</p>
+<h2>Layer 2: schema quality</h2>
+<p>These are assertions about your tool definitions, and they catch a surprising amount.</p>
+<p>The most valuable one is not obvious: <strong>assert that the tool block serialises
+byte-identically across calls.</strong> If it does not, prompt caching will never hit, and the
+symptom — a bill roughly 25% higher than expected with no functional difference — is
+extremely hard to trace back to its cause. A three-line test catches it forever.</p>
+<h2>The suite</h2>
+<p>This runs. The stub <code>server.py</code> stands in for whatever your real request handling looks
+like; replace it with an import of your own handler and the tests carry over.</p>
+<pre><code class="language-python">import json
+import pytest
+from server import handle, RpcError, MODERN, SUPPORTED
+
+def req(method, params=None, version=MODERN):
+    return {&quot;method&quot;: method,
+            &quot;params&quot;: params or {},
+            &quot;_meta&quot;: {&quot;io.modelcontextprotocol/protocol-version&quot;: version}}
+
+# ── Layer 1: protocol conformance ────────────────────────────────────────────
+def test_discover_is_implemented():
+    assert MODERN in handle(req(&quot;server/discover&quot;))[&quot;protocolVersions&quot;]
+
+def test_unsupported_version_returns_32022_with_supported_list():
+    with pytest.raises(RpcError) as e:
+        handle(req(&quot;tools/list&quot;, version=&quot;1900-01-01&quot;))
+    assert e.value.code == -32022
+    assert e.value.data[&quot;supported&quot;] == SUPPORTED
+    assert e.value.data[&quot;requested&quot;] == &quot;1900-01-01&quot;
+
+def test_missing_version_is_rejected():
+    with pytest.raises(RpcError) as e:
+        handle({&quot;method&quot;: &quot;tools/list&quot;, &quot;_meta&quot;: {}})
+    assert e.value.code == -32022
+
+# ── Layer 2: schema quality ──────────────────────────────────────────────────
+@pytest.fixture
+def tools():
+    return handle(req(&quot;tools/list&quot;))[&quot;tools&quot;]
+
+def test_every_tool_has_name_and_description(tools):
+    for t in tools:
+        assert t.get(&quot;name&quot;) and t.get(&quot;description&quot;)
+
+def test_every_parameter_is_described(tools):
+    for t in tools:
+        for prop, spec in t[&quot;inputSchema&quot;].get(&quot;properties&quot;, {}).items():
+            assert spec.get(&quot;type&quot;), f&quot;{t['name']}.{prop} has no type&quot;
+
+def test_numeric_parameters_are_bounded(tools):
+    for t in tools:
+        for prop, spec in t[&quot;inputSchema&quot;].get(&quot;properties&quot;, {}).items():
+            if spec.get(&quot;type&quot;) == &quot;integer&quot;:
+                assert &quot;minimum&quot; in spec and &quot;maximum&quot; in spec, \
+                    f&quot;{t['name']}.{prop} is unbounded&quot;
+
+def test_tool_definitions_serialise_deterministically(tools):
+    a = json.dumps(handle(req(&quot;tools/list&quot;)), sort_keys=False)
+    b = json.dumps(handle(req(&quot;tools/list&quot;)), sort_keys=False)
+    assert a == b, &quot;tool block is not byte-stable; caching will never hit&quot;
+
+# ── Layer 3: error messages are actionable ───────────────────────────────────
+def test_missing_required_argument_names_the_field():
+    with pytest.raises(RpcError) as e:
+        handle(req(&quot;tools/call&quot;, {&quot;arguments&quot;: {}}))
+    assert &quot;query&quot; in e.value.message and &quot;Retry&quot; in e.value.message
+
+def test_out_of_range_error_shows_received_value():
+    with pytest.raises(RpcError) as e:
+        handle(req(&quot;tools/call&quot;, {&quot;arguments&quot;: {&quot;query&quot;: &quot;x&quot;, &quot;limit&quot;: 500}}))
+    assert &quot;500&quot; in e.value.message and &quot;1 and 25&quot; in e.value.message
+
+def test_empty_result_is_explicit_not_ambiguous():
+    out = handle(req(&quot;tools/call&quot;, {&quot;arguments&quot;: {&quot;query&quot;: &quot;nothing&quot;}}))
+    assert out[&quot;total&quot;] == 0 and out[&quot;message&quot;]
+</code></pre>
+<pre><code>$ python3 -m pytest -q
+..........                                                    [100%]
+10 passed in 0.01s
+</code></pre>
+<p>Those last three tests are unusual and worth keeping. They assert that error messages are
+<em>useful to a model</em> — that they name the field, show the received value, and say what to
+do. Error text is normally untested because it is "just a string". Here it is part of the
+control flow: the model reads it and decides what to do next. Test it like an interface,
+because it is one.</p>
+<h2>Layer 3: behavioural testing</h2>
+<p>Everything above runs without a model. This layer needs one, and it is where the failures
+that actually reach users live.</p>
+<p>You are measuring two things:</p>
+<ul>
+<li><strong>Selection accuracy</strong> — given a realistic user request, is the right tool called?</li>
+<li><strong>Argument accuracy</strong> — are the arguments well-formed and semantically correct?</li>
+</ul>
+<p>Build a set of realistic requests phrased the way users phrase them, not the way your
+documentation phrases them. Pull them from real logs if you have them. Include the
+ambiguous ones and the ones that should route to a <em>different</em> tool, because false
+positives matter as much as false negatives.</p>
+<p>Then run each case several times. Tool selection is non-deterministic. A definition that
+works four times in five looks perfect in a manual test and produces a steady trickle of
+production failures. Three runs minimum, and look at the spread rather than the mean.</p>
+<p>When a case fails, fix the tool definition rather than the system prompt. A system prompt
+workaround does not travel with your server to other clients, and it has to be maintained
+forever. Usually the fix is a "do not use for" clause pointing at the tool that should
+have been called.</p>
+<h2>Failure modes worth testing for explicitly</h2>
+<p>From servers we have debugged, these recur often enough to be worth a permanent test:</p>
+<p><strong>Unbounded returns.</strong> A query that matches everything returns everything, blows the
+context window, and fails in a way that looks like a model problem. Cap server-side and
+test the cap.</p>
+<p><strong>Silent nulls.</strong> A tool returning <code>null</code> for a missing record is ambiguous — the model
+cannot distinguish "not found" from "found, empty". Return an explicit message.</p>
+<p><strong>Shape drift.</strong> A tool that returns an object for one result and an array for several.
+Pick one shape and assert it.</p>
+<p><strong>Timeouts with no signal.</strong> A tool that hangs gives the model nothing to work with. Set a
+timeout and return an actionable error when you hit it.</p>
+<p><strong>Non-deterministic key ordering.</strong> Covered above, and the highest-value test in the suite
+for anyone who has caching configured.</p>
+<p><strong>Schema drift between code and definition.</strong> The handler accepts a parameter the schema
+does not declare, or vice versa. Assert that declared parameters and handled parameters
+match.</p>
+<h2>Debugging when it is already broken</h2>
+<p>A working order for the common symptoms:</p>
+<p><strong>"The model never calls my tool."</strong> Check it is in <code>tools/list</code> at all. Then read the
+description as if you had never seen the tool — does it say when to use it, in the words a
+user would use? Then check for a neighbouring tool that is winning the selection.</p>
+<p><strong>"The model calls it with bad arguments."</strong> Almost always missing format detail in the
+parameter description. Dates and identifiers are the usual suspects. Add an example inline.</p>
+<p><strong>"It works in my client but not theirs."</strong> Era mismatch. Check whether the other client is
+legacy and whether your server supports both. The compatibility matrix in the versioning
+spec tells you exactly which combinations fail.</p>
+<p><strong>"It worked yesterday."</strong> Diff your serialised tool definitions. Something regenerated
+differently.</p>
+<p><strong>"Costs went up but nothing changed."</strong> Check <code>cache_read_input_tokens</code> against
+<code>cache_creation_input_tokens</code>. If creation is consistently large, your cache stopped
+hitting — usually because a tool definition changed, which invalidates everything.</p>
+<h2>On logging</h2>
+<p>You cannot debug an agent loop from a stack trace. Log, per tool call: the tool name, the
+full arguments, the result summary, the duration, and a correlation ID tying the whole run
+together.</p>
+<p>Log tool <em>errors</em> with the same care, including the message you sent back to the model.
+When you are working out why a run went sideways, the error text the model actually read
+is frequently the answer, and it is the thing least likely to have been recorded.</p>
+<h2>A pre-ship checklist</h2>
+<ul>
+<li><code>server/discover</code> implemented and tested</li>
+<li><code>UnsupportedProtocolVersionError</code> returns <code>-32022</code> with a populated <code>supported</code> list</li>
+<li>Missing protocol version is rejected, not defaulted</li>
+<li>Every tool has a description containing use-when and do-not-use-for</li>
+<li>Every parameter has a type, a description, and bounds where numeric</li>
+<li>Tool block verified byte-stable across calls</li>
+<li>Error messages name the field, show the value, and state the fix</li>
+<li>Results are capped server-side and report a total</li>
+<li>Selection accuracy measured over repeated runs on realistic phrasing</li>
+<li>Tool calls and tool errors logged with a correlation ID</li>
+<li>If dual-era: both failing rows of the compatibility matrix tested</li>
+</ul>
+    </div>
+  </div>
+
+  <div class="article-foot">
+    <div class="wrap">
+      <div class="related">
+        <h2>Related reading</h2>
+        <ul>
+          <li><a href="/blog/mcp-2026-07-28-migration-stateless-protocol/">MCP without initialize — migrating to the 2026-07-28 revision</a><div class="rel-dek">The current MCP revision removes the initialize handshake entirely. Servers are stateless, every request carries its own protocol version, and most of the MCP material on the internet now describes a legacy protocol.</div></li>
+          <li><a href="/blog/mcp-tool-schema-design/">Designing MCP tool schemas a model actually uses correctly</a><div class="rel-dek">The model never sees your implementation. It sees a name, a description and a JSON Schema — and that is the entire interface. Most tool-calling failures are interface design problems wearing a model&#x27;s clothes.</div></li>
+          <li><a href="/blog/mcp-tool-definition-token-cost/">What your MCP tool definitions cost on every single request</a><div class="rel-dek">Tool definitions sit in the context window before the user has typed anything, on every request, forever. Here is a script that measures the bill — and the reason a one-character change to a description can invalidate your entire cache.</div></li>
+        </ul>
+      </div>
+      <div class="sources">
+        <h2>Sources</h2>
+        <ul>
+          <li><a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning" rel="noopener">MCP specification 2026-07-28 — Versioning and Compatibility</a></li>
+          <li><a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/transports" rel="noopener">MCP specification 2026-07-28 — Transports</a></li>
+        </ul>
+      </div>
+      <div class="cta-block">
+        <div>
+          <h2>Working on something like this?</h2>
+          <p>We build Claude integrations, MCP servers and agentic workflows for
+             startups and SMBs in the Netherlands and across the EU.</p>
+        </div>
+        <a href="/#contact" class="btn btn-primary">Book a free consult</a>
+      </div>
+    </div>
+  </div>
+  </article>
+
+  <footer>
+    <span>&copy; 2026 Product Labs B.V. &middot; Amsterdam, The Netherlands</span>
+    <span><a href="/blog/">Blog</a> &middot; <a href="mailto:jon@productlabs.nl">jon@productlabs.nl</a></span>
+  </footer>
+</body>
+</html>

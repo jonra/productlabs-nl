@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f3ee" />
+  <title>Claude Prompt Caching: Automatic, Explicit, and the Lookback Trap</title>
+  <meta name="description" content="How Claude&#x27;s prompt cache really works — where breakpoints belong, the 20-block lookback window, per-model minimums, and the mistake that bills you for writes you never read." />
+  <link rel="canonical" href="https://www.productlabs.nl/blog/claude-prompt-caching-guide/" />
+  
+  <meta property="og:title" content="Claude Prompt Caching: Automatic, Explicit, and the Lookback Trap" />
+  <meta property="og:description" content="How Claude&#x27;s prompt cache really works — where breakpoints belong, the 20-block lookback window, per-model minimums, and the mistake that bills you for writes you never read." />
+  <meta property="og:url" content="https://www.productlabs.nl/blog/claude-prompt-caching-guide/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_NL" />
+  <meta property="og:site_name" content="ProductLabs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Claude Prompt Caching: Automatic, Explicit, and the Lookback Trap" />
+  <meta name="twitter:description" content="How Claude&#x27;s prompt cache really works — where breakpoints belong, the 20-block lookback window, per-model minimums, and the mistake that bills you for writes you never read." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/assets/blog.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Claude prompt caching \u2014 automatic, explicit, and the lookback trap",
+  "description": "The cache does not find stable content behind your breakpoint. It finds entries earlier requests already wrote. Understanding that one sentence is the difference between an 80% discount and paying a premium on every request.",
+  "datePublished": "2026-07-16",
+  "dateModified": "2026-08-10",
+  "author": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.productlabs.nl/blog/claude-prompt-caching-guide/"
+  },
+  "inLanguage": "en",
+  "keywords": "claude prompt caching, cache_control claude, anthropic cache breakpoint, prompt cache not hitting, claude cache pricing, prompt cache prewarming"
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.productlabs.nl/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "https://www.productlabs.nl/blog/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Claude prompt caching \u2014 automatic, explicit, and the lookback trap",
+      "item": "https://www.productlabs.nl/blog/claude-prompt-caching-guide/"
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">Product<span>Labs</span></a>
+    <div class="nav-links">
+      <a href="/#services">Services</a>
+      <a href="/#ecosystem">Anthropic ecosystem</a>
+      <a href="/#use-cases">Use cases</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+    </div>
+    <a href="/#contact" class="cta-nav">Get in touch</a>
+  </nav>
+  <article>
+  <header class="article-head">
+    <div class="wrap">
+      <div class="breadcrumb">
+        <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><a href="/blog/topics/claude-api/">Claude API</a>
+      </div>
+      <h1>Claude prompt caching — automatic, explicit, and the lookback trap</h1>
+      <p class="dek">The cache does not find stable content behind your breakpoint. It finds entries earlier requests already wrote. Understanding that one sentence is the difference between an 80% discount and paying a premium on every request.</p>
+      <div class="article-meta">
+        <span>16 July 2026</span>
+        <span>Updated 10 August 2026</span>
+        <span>11 min read</span>
+        <a class="topic-tag" href="/blog/topics/claude-api/">Claude API</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+<div class="callout">
+<span class="callout-label">Pricing and model minimums verified 10 August 2026</span>
+<p>Model pricing changes. One change is already scheduled — see the pricing section.
+Re-check current rates before building a cost model on these numbers.</p>
+</div>
+
+<p>Prompt caching is the highest-leverage cost optimisation available on the Claude API.
+Cache reads cost a tenth of base input tokens. For a workload with a large stable prefix —
+a long system prompt, a document, a set of tool definitions — that is most of your bill.</p>
+<p>It is also the feature we most often find misconfigured, and the failure is silent. You
+get charged the 25% write premium on every single request and never once read from the
+cache. Your costs go <em>up</em>.</p>
+<p>There is one sentence that prevents this, and it is worth reading twice:</p>
+<blockquote>
+<p>The lookback does not find stable content behind your breakpoint. It finds entries that
+earlier requests already wrote — and writes happen only at breakpoints.</p>
+</blockquote>
+<p>Everything below follows from that.</p>
+<h2>The mechanism, precisely</h2>
+<p>Three principles define the whole system.</p>
+<p><strong>Cache writes happen only at your breakpoint.</strong> Marking a block with <code>cache_control</code>
+writes exactly one cache entry: a hash of the prefix ending at that block. The system does
+not write entries for any earlier position. Because the hash is cumulative — covering
+everything up to and including the breakpoint — changing any block at or before the
+breakpoint produces a different hash next time.</p>
+<p><strong>Cache reads look backward for entries prior requests wrote.</strong> On each request the system
+computes the prefix hash at your breakpoint and checks for a match. If there is none, it
+walks backward one block at a time, checking whether the prefix hash at each earlier
+position matches something already cached. It is looking for prior <em>writes</em>, not for
+stable <em>content</em>.</p>
+<p><strong>The lookback window is 20 blocks.</strong> At most 20 positions are checked per breakpoint,
+counting the breakpoint itself as the first. If nothing matches in that window, checking
+stops — or resumes at the next explicit breakpoint, if you have one.</p>
+<h2>The mistake that costs money</h2>
+<p>Here is the shape of it. Your prompt has a large static system context in blocks 1–5,
+followed by a per-request block containing a timestamp and the user message in block 6.
+You set <code>cache_control</code> on block 6, because it is the last block and that seems right.</p>
+<ul>
+<li><strong>Request 1:</strong> cache write at block 6. The hash includes the timestamp.</li>
+<li><strong>Request 2:</strong> the timestamp differs, so the prefix hash at block 6 differs. The lookback
+  walks back through blocks 5, 4, 3, 2, 1 — and the system never wrote an entry at any of
+  those positions. No cache hit.</li>
+</ul>
+<p>You pay a fresh cache write on every request and never get a read. You have made the
+workload more expensive than not caching at all.</p>
+<p>The fix is one line: move <code>cache_control</code> to block 5, the last block that stays identical
+across requests. Every subsequent request then reads the cached prefix.</p>
+<p><strong>Automatic caching falls into the same trap.</strong> It places the breakpoint on the last
+cacheable block — which in this structure is exactly the block that changes every request.
+For a prompt with a varying suffix, use an explicit breakpoint on the static prefix
+instead.</p>
+<h2>Automatic versus explicit</h2>
+<p><strong>Automatic caching</strong> takes a single <code>cache_control</code> field at the top level of the request
+body. The system applies the breakpoint to the last cacheable block and moves it forward
+as the conversation grows.</p>
+<pre><code class="language-python">response = client.messages.create(
+    model=&quot;claude-opus-5&quot;,
+    max_tokens=1024,
+    cache_control={&quot;type&quot;: &quot;ephemeral&quot;},
+    system=&quot;You are an AI assistant tasked with analyzing literary works...&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Analyze the major themes in 'Pride and Prejudice'.&quot;}],
+)
+</code></pre>
+<p>This is the right default for <strong>multi-turn conversations</strong>, where each turn appends to a
+history that never changes retroactively. The breakpoint advancing with the conversation
+is exactly what you want, and you never touch a marker.</p>
+<p><strong>Explicit breakpoints</strong> put <code>cache_control</code> on individual content blocks. Use them when
+sections change at different frequencies, or when your last block varies per request.</p>
+<p>The two compose. A common and effective pattern is an explicit breakpoint on the system
+prompt plus automatic caching for the conversation:</p>
+<pre><code class="language-json">{
+  &quot;model&quot;: &quot;claude-opus-5&quot;,
+  &quot;max_tokens&quot;: 1024,
+  &quot;cache_control&quot;: { &quot;type&quot;: &quot;ephemeral&quot; },
+  &quot;system&quot;: [
+    {
+      &quot;type&quot;: &quot;text&quot;,
+      &quot;text&quot;: &quot;You are a helpful assistant.&quot;,
+      &quot;cache_control&quot;: { &quot;type&quot;: &quot;ephemeral&quot; }
+    }
+  ],
+  &quot;messages&quot;: [{ &quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;What are the key terms?&quot; }]
+}
+</code></pre>
+<p>Note that the automatic breakpoint consumes one of the four available slots. If you
+already have four explicit breakpoints, adding a top-level <code>cache_control</code> returns a <code>400</code>.</p>
+<h2>Growing conversations and the 20-block cliff</h2>
+<p>This one is subtle because it works fine, then stops.</p>
+<p>Suppose you append blocks each turn and set the breakpoint on the final block:</p>
+<ul>
+<li><strong>Turn 1:</strong> 10 blocks, breakpoint at block 10. Nothing cached yet. Entry written at 10.</li>
+<li><strong>Turn 2:</strong> 15 blocks, breakpoint at block 15. No entry there, so the lookback walks back
+  to block 10 and finds the turn-1 entry. Hit. Blocks 11–15 processed fresh, new entry
+  written at 15.</li>
+<li><strong>Turn 3:</strong> 35 blocks, breakpoint at block 35. The lookback checks 20 positions — blocks
+  35 down to 16 — and finds nothing. The turn-2 entry at block 15 is one position outside
+  the window. <strong>No hit.</strong></li>
+</ul>
+<p>Nothing errors. Your bill just quietly doubles.</p>
+<p>The rule: in a growing conversation, the final block works as a breakpoint <strong>as long as
+each turn adds fewer than 20 blocks</strong>. If a turn can add more — a burst of tool calls, a
+batch of retrieved documents — add a second breakpoint closer to that position <em>from the
+start</em>, so a write accumulates there before you need it.</p>
+<p>Breakpoints themselves are free. You are charged for writes and reads, not for markers.
+There is no cost argument against placing them defensively.</p>
+<h2>Minimum cacheable length</h2>
+<p>Below the minimum, caching is silently skipped. No error, no warning.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Minimum cacheable prompt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claude Opus 5, Fable 5, Mythos 5</td>
+<td>512 tokens</td>
+</tr>
+<tr>
+<td>Claude Opus 4.8, Sonnet 5, Sonnet 4.6, Sonnet 4.5</td>
+<td>1,024 tokens</td>
+</tr>
+<tr>
+<td>Claude Mythos Preview, Opus 4.7</td>
+<td>2,048 tokens</td>
+</tr>
+<tr>
+<td>Claude Opus 4.6, Opus 4.5, Haiku 4.5</td>
+<td>4,096 tokens</td>
+</tr>
+</tbody>
+</table></div>
+<p>Haiku 4.5 having a 4,096-token floor surprises people, because Haiku is the model most
+often used for short, high-volume calls — precisely the shape that cannot be cached.</p>
+<p>To check whether a prompt cached at all: if both <code>cache_creation_input_tokens</code> and
+<code>cache_read_input_tokens</code> are <code>0</code>, it did not. If you are just under the threshold,
+expanding the cached content to reach it is often worth doing — reads are cheap enough
+that crossing the line pays for the extra tokens.</p>
+<h2>Pricing, and a change you need to diary</h2>
+<p>Multipliers against base input price:</p>
+<ul>
+<li>5-minute cache write: <strong>1.25×</strong></li>
+<li>1-hour cache write: <strong>2×</strong></li>
+<li>Cache read: <strong>0.1×</strong></li>
+</ul>
+<p>Current rates per million tokens:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Base input</th>
+<th>5m write</th>
+<th>1h write</th>
+<th>Cache read</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claude Opus 5</td>
+<td>$5</td>
+<td>$6.25</td>
+<td>$10</td>
+<td>$0.50</td>
+<td>$25</td>
+</tr>
+<tr>
+<td>Claude Sonnet 5 (to 31 Aug 2026)</td>
+<td>$2</td>
+<td>$2.50</td>
+<td>$4</td>
+<td>$0.20</td>
+<td>$10</td>
+</tr>
+<tr>
+<td>Claude Sonnet 5 (from 1 Sep 2026)</td>
+<td>$3</td>
+<td>$3.75</td>
+<td>$6</td>
+<td>$0.30</td>
+<td>$15</td>
+</tr>
+<tr>
+<td>Claude Haiku 4.5</td>
+<td>$1</td>
+<td>$1.25</td>
+<td>$2</td>
+<td>$0.10</td>
+<td>$5</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Sonnet 5 pricing rises on 1 September 2026</strong>, from $2/$10 to $3/$15 per MTok. If your
+cost model was built on the current rate, re-run it before then. A 50% input increase
+changes routing decisions.</p>
+<p>The break-even is straightforward. A cached prefix pays for itself after roughly <strong>1.5
+reads</strong> against the 5-minute write premium. Anything reused more than twice within the TTL
+is unambiguously worth caching.</p>
+<h2>Choosing a TTL</h2>
+<p>The 5-minute cache <strong>refreshes for free</strong> every time it is read. If your prompts are used
+more often than every five minutes, stay on the default — you will never pay a second
+write.</p>
+<p>The 1-hour cache costs 2× base input on write. It is worth it when:</p>
+<ul>
+<li>Prompts are reused less often than every 5 minutes but more often than hourly</li>
+<li>A side-agent or long-running task will take more than five minutes</li>
+<li>A user may not reply within five minutes and you care about their time-to-first-token</li>
+<li>You want the rate-limit relief, since cache hits are not deducted against rate limits</li>
+</ul>
+<p>Both TTLs behave identically for latency. And note the lifetime is measured from the
+<em>start</em> of the request that writes or reads the entry, not the end of the response. If a
+response streams for four minutes, a follow-up must start within about one minute.</p>
+<h2>What invalidates the cache</h2>
+<p>The hierarchy is <code>tools → system → messages</code>. Changes at each level invalidate that level
+and everything after it.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Invalidates</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tool definitions</td>
+<td>Everything — tools, system, messages</td>
+</tr>
+<tr>
+<td>Web search or citations toggle</td>
+<td>System and messages</td>
+</tr>
+<tr>
+<td>Speed setting</td>
+<td>System and messages</td>
+</tr>
+<tr>
+<td><code>tool_choice</code></td>
+<td>Messages only</td>
+</tr>
+<tr>
+<td>Adding/removing images anywhere</td>
+<td>Messages only</td>
+</tr>
+<tr>
+<td>Thinking parameters</td>
+<td>Messages always; tools/system model-specific</td>
+</tr>
+<tr>
+<td>Effort setting</td>
+<td>Messages always; tools/system model-specific</td>
+</tr>
+</tbody>
+</table></div>
+<p>That first row is the one that hurts in MCP deployments: <strong>any</strong> change to a tool
+definition — a name, a description, a parameter — invalidates the entire cache including
+your system prompt. If you generate tool definitions dynamically, make sure the generation
+is deterministic.</p>
+<p>Which leads to the most obscure failure in this whole area: <strong>non-deterministic JSON key
+ordering</strong>. Some languages, notably Go and Swift, randomise map key order during JSON
+serialisation. If your <code>tool_use</code> blocks are serialised with unstable key ordering, the
+prefix hash differs every request and you never get a hit. Everything looks correct in
+your code. Enforce stable key ordering.</p>
+<h2>Verifying it works</h2>
+<p>Three usage fields tell you everything:</p>
+<pre><code>total_input_tokens = cache_read_input_tokens
+                   + cache_creation_input_tokens
+                   + input_tokens
+</code></pre>
+<p><code>input_tokens</code> counts <strong>only</strong> tokens after your last breakpoint — not your total input.
+This trips people up when reconciling costs. A request with 100,000 cached tokens and a
+50-token user message reports <code>cache_read_input_tokens: 100000</code> and <code>input_tokens: 50</code>.</p>
+<p>A healthy steady-state pattern is a large <code>cache_read_input_tokens</code>, near-zero
+<code>cache_creation_input_tokens</code>, and a small <code>input_tokens</code>. If <code>cache_creation</code> is
+consistently large, your breakpoint is on something that varies.</p>
+<p>There is also a cache diagnostics beta that has the API compare consecutive requests and
+report exactly where the prefix diverged. When you are stuck, it will save you an hour of
+bisecting.</p>
+<h2>Pre-warming</h2>
+<p>You can load a prefix into the cache before real traffic arrives, using <code>max_tokens: 0</code>.
+The API reads the prompt, writes the cache at your breakpoint, and returns immediately with
+an empty <code>content</code> array and <code>stop_reason: "max_tokens"</code>. Zero output tokens are billed.</p>
+<pre><code class="language-python">client.messages.create(
+    model=&quot;claude-opus-5&quot;,
+    max_tokens=0,
+    system=[{
+        &quot;type&quot;: &quot;text&quot;,
+        &quot;text&quot;: &quot;You are an expert software engineer with deep knowledge of distributed systems...&quot;,
+        &quot;cache_control&quot;: {&quot;type&quot;: &quot;ephemeral&quot;},
+    }],
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;warmup&quot;}],
+)
+</code></pre>
+<p>Two constraints matter. The breakpoint must sit on the block shared with your real
+requests — typically the system prompt or tool definitions — <strong>not</strong> on the placeholder
+user message. Put it on the placeholder and the entry is keyed to text your real traffic
+never sends. This means using an explicit breakpoint rather than automatic caching, since
+automatic caching places the breakpoint on the last block, which here is the placeholder.</p>
+<p>And use the same thinking configuration and effort setting as your real requests. Those
+values are rendered into the prompt, so a pre-warm with a different configuration writes
+an entry your traffic will never hit.</p>
+<p><code>max_tokens: 0</code> is rejected with streaming, extended thinking, structured outputs, a
+forced <code>tool_choice</code>, or inside a Message Batches request.</p>
+<h2>The troubleshooting order</h2>
+<p>When the cache is not hitting, check in this sequence:</p>
+<ol>
+<li>Are you above the minimum token count for your model?</li>
+<li>Is the breakpoint on a block that is byte-identical across requests?</li>
+<li>Are calls landing within the TTL, measured from request start?</li>
+<li>Has a growing conversation pushed you past the 20-block lookback?</li>
+<li>Are <code>tool_choice</code>, image presence, thinking config and effort stable between calls?</li>
+<li>Are your <code>tool_use</code> blocks serialised with deterministic key ordering?</li>
+<li>Have tool definitions changed — including regenerated ones that should be identical?</li>
+</ol>
+<p>In our experience, items 2 and 4 account for most real-world cache misses, and item 6 for
+most of the ones that take a full day to find.</p>
+    </div>
+  </div>
+
+  <div class="article-foot">
+    <div class="wrap">
+      <div class="related">
+        <h2>Related reading</h2>
+        <ul>
+          <li><a href="/blog/mcp-tool-definition-token-cost/">What your MCP tool definitions cost on every single request</a><div class="rel-dek">Tool definitions sit in the context window before the user has typed anything, on every request, forever. Here is a script that measures the bill — and the reason a one-character change to a description can invalidate your entire cache.</div></li>
+          <li><a href="/blog/claude-model-selection-cost-per-task/">Model selection is a cost-per-resolved-task problem, not a price-per-token one</a><div class="rel-dek">A model that costs a fifth as much but needs three attempts is not cheaper. Here is how to build the comparison that actually predicts your bill — and why Sonnet 5&#x27;s September price change should send you back to it.</div></li>
+        </ul>
+      </div>
+      <div class="sources">
+        <h2>Sources</h2>
+        <ul>
+          <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" rel="noopener">Claude Platform Docs — Prompt caching</a></li>
+        </ul>
+      </div>
+      <div class="cta-block">
+        <div>
+          <h2>Working on something like this?</h2>
+          <p>We build Claude integrations, MCP servers and agentic workflows for
+             startups and SMBs in the Netherlands and across the EU.</p>
+        </div>
+        <a href="/#contact" class="btn btn-primary">Book a free consult</a>
+      </div>
+    </div>
+  </div>
+  </article>
+
+  <footer>
+    <span>&copy; 2026 Product Labs B.V. &middot; Amsterdam, The Netherlands</span>
+    <span><a href="/blog/">Blog</a> &middot; <a href="mailto:jon@productlabs.nl">jon@productlabs.nl</a></span>
+  </footer>
+</body>
+</html>

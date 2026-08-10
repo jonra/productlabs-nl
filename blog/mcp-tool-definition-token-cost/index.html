@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f3ee" />
+  <title>What Your MCP Tool Definitions Cost You Per Request</title>
+  <meta name="description" content="Measure the token cost of MCP tool definitions with a working script, understand how caching applies, and cut the fixed per-request overhead of a multi-server deployment." />
+  <link rel="canonical" href="https://www.productlabs.nl/blog/mcp-tool-definition-token-cost/" />
+  
+  <meta property="og:title" content="What Your MCP Tool Definitions Cost You Per Request" />
+  <meta property="og:description" content="Measure the token cost of MCP tool definitions with a working script, understand how caching applies, and cut the fixed per-request overhead of a multi-server deployment." />
+  <meta property="og:url" content="https://www.productlabs.nl/blog/mcp-tool-definition-token-cost/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_NL" />
+  <meta property="og:site_name" content="ProductLabs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="What Your MCP Tool Definitions Cost You Per Request" />
+  <meta name="twitter:description" content="Measure the token cost of MCP tool definitions with a working script, understand how caching applies, and cut the fixed per-request overhead of a multi-server deployment." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/assets/blog.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "What your MCP tool definitions cost on every single request",
+  "description": "Tool definitions sit in the context window before the user has typed anything, on every request, forever. Here is a script that measures the bill \u2014 and the reason a one-character change to a description can invalidate your entire cache.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-08-10",
+  "author": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.productlabs.nl/blog/mcp-tool-definition-token-cost/"
+  },
+  "inLanguage": "en",
+  "keywords": "mcp token cost, claude tool definition tokens, reduce mcp context, tool definition caching, mcp context window"
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.productlabs.nl/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "https://www.productlabs.nl/blog/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "What your MCP tool definitions cost on every single request",
+      "item": "https://www.productlabs.nl/blog/mcp-tool-definition-token-cost/"
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">Product<span>Labs</span></a>
+    <div class="nav-links">
+      <a href="/#services">Services</a>
+      <a href="/#ecosystem">Anthropic ecosystem</a>
+      <a href="/#use-cases">Use cases</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+    </div>
+    <a href="/#contact" class="cta-nav">Get in touch</a>
+  </nav>
+  <article>
+  <header class="article-head">
+    <div class="wrap">
+      <div class="breadcrumb">
+        <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><a href="/blog/topics/mcp/">MCP</a>
+      </div>
+      <h1>What your MCP tool definitions cost on every single request</h1>
+      <p class="dek">Tool definitions sit in the context window before the user has typed anything, on every request, forever. Here is a script that measures the bill — and the reason a one-character change to a description can invalidate your entire cache.</p>
+      <div class="article-meta">
+        <span>20 July 2026</span>
+        <span>Updated 10 August 2026</span>
+        <span>8 min read</span>
+        <a class="topic-tag" href="/blog/topics/mcp/">MCP</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+<p>Tool definitions are not free and they are not occasional. They are part of the prompt, on
+every request, before the user has said a word.</p>
+<p>On a single small server nobody notices. On a realistic deployment — a user with six or
+seven MCP servers connected, each exposing eight to fifteen tools — the fixed overhead per
+request becomes one of the larger line items in the bill, and one almost nobody has
+measured.</p>
+<h2>Measure it first</h2>
+<p>Here is a script that reports the per-tool token cost of any MCP server's tool set.</p>
+<p>It runs in two modes. With an API key it measures each tool's <strong>marginal</strong> cost through the
+token counting endpoint, which is exact. Without one it falls back to a character-based
+approximation that is good enough for finding your worst offenders.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;Report the per-request token cost of a set of MCP tool definitions.&quot;&quot;&quot;
+from __future__ import annotations
+
+import argparse, json, sys
+from pathlib import Path
+
+
+def load_tools(path: Path) -&gt; list[dict]:
+    data = json.loads(path.read_text(encoding=&quot;utf-8&quot;))
+    tools = data.get(&quot;tools&quot;, data) if isinstance(data, dict) else data
+    if not isinstance(tools, list):
+        sys.exit(&quot;Expected a list of tools, or an object with a 'tools' key.&quot;)
+    return tools
+
+
+def normalise(tool: dict) -&gt; dict:
+    &quot;&quot;&quot;Map an MCP tool definition onto the Claude API tool shape.&quot;&quot;&quot;
+    schema = tool.get(&quot;inputSchema&quot;) or tool.get(&quot;input_schema&quot;) or {}
+    return {
+        &quot;name&quot;: tool.get(&quot;name&quot;, &quot;&lt;unnamed&gt;&quot;),
+        &quot;description&quot;: tool.get(&quot;description&quot;, &quot;&quot;),
+        &quot;input_schema&quot;: schema,
+    }
+
+
+def estimate_tokens(tool: dict) -&gt; int:
+    &quot;&quot;&quot;Key-free approximation. Serialised JSON averages ~3.7 chars/token.&quot;&quot;&quot;
+    return round(len(json.dumps(tool, separators=(&quot;,&quot;, &quot;:&quot;))) / 3.7)
+
+
+def count_exact(tools: list[dict], model: str) -&gt; list[int]:
+    &quot;&quot;&quot;Marginal cost of each tool, measured by difference.&quot;&quot;&quot;
+    import anthropic
+    client = anthropic.Anthropic()
+    msg = [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;x&quot;}]
+
+    def count(subset):
+        r = client.messages.count_tokens(model=model, messages=msg, tools=subset)
+        return r.input_tokens
+
+    base = count([])
+    running, out = base, []
+    for i in range(len(tools)):
+        total = count(tools[: i + 1])
+        out.append(total - running)
+        running = total
+    return out
+
+
+def main() -&gt; int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument(&quot;file&quot;, type=Path)
+    ap.add_argument(&quot;--model&quot;, default=&quot;claude-opus-5&quot;)
+    ap.add_argument(&quot;--price&quot;, type=float, default=5.0,
+                    help=&quot;base input price per million tokens&quot;)
+    ap.add_argument(&quot;--requests&quot;, type=int, default=100_000,
+                    help=&quot;requests per month, for the projection&quot;)
+    ap.add_argument(&quot;--estimate&quot;, action=&quot;store_true&quot;, help=&quot;force key-free mode&quot;)
+    args = ap.parse_args()
+
+    tools = [normalise(t) for t in load_tools(args.file)]
+    if not tools:
+        sys.exit(&quot;No tools found.&quot;)
+
+    mode = &quot;estimate&quot;
+    counts = [estimate_tokens(t) for t in tools]
+    if not args.estimate:
+        try:
+            counts = count_exact(tools, args.model)
+            mode = &quot;exact&quot;
+        except Exception as e:
+            print(f&quot;note: falling back to estimate mode ({type(e).__name__})\n&quot;,
+                  file=sys.stderr)
+
+    order = sorted(range(len(tools)), key=lambda i: counts[i], reverse=True)
+    total = sum(counts)
+
+    width = max(len(t[&quot;name&quot;]) for t in tools) + 2
+    print(f&quot;{'TOOL':&lt;{width}}{'TOKENS':&gt;8}{'SHARE':&gt;8}&quot;)
+    print(&quot;-&quot; * (width + 16))
+    for i in order:
+        share = counts[i] / total * 100 if total else 0
+        print(f&quot;{tools[i]['name']:&lt;{width}}{counts[i]:&gt;8}{share:&gt;7.1f}%&quot;)
+    print(&quot;-&quot; * (width + 16))
+    print(f&quot;{'TOTAL':&lt;{width}}{total:&gt;8}&quot;)
+
+    uncached = total / 1_000_000 * args.price * args.requests
+    cached = uncached * 0.1
+    print(f&quot;\nmode: {mode}   model: {args.model}   base input: ${args.price}/MTok&quot;)
+    print(f&quot;per request: {total} tokens before the user says anything&quot;)
+    print(f&quot;at {args.requests:,} requests/month:&quot;)
+    print(f&quot;  uncached: ${uncached:,.2f}&quot;)
+    print(f&quot;  cached:   ${cached:,.2f}  (saving ${uncached - cached:,.2f})&quot;)
+    return 0
+
+
+if __name__ == &quot;__main__&quot;:
+    raise SystemExit(main())
+</code></pre>
+<p>Save your server's <code>tools/list</code> output to a JSON file and run it. Output looks like this —
+this is a real run against a small four-tool document server:</p>
+<pre><code>TOOL                TOKENS   SHARE
+----------------------------------
+search_documents       202   40.6%
+list_documents         110   22.1%
+get_document            94   18.9%
+create_ticket           92   18.5%
+----------------------------------
+TOTAL                  498
+
+mode: estimate   model: claude-opus-5   base input: $5.0/MTok
+per request: 498 tokens before the user says anything
+at 100,000 requests/month:
+  uncached: $249.00
+  cached:   $24.90  (saving $224.10)
+</code></pre>
+<p>Four tools. Around 500 tokens. That is fine.</p>
+<p>Now scale it the way real deployments scale. Seven servers averaging ten tools each,
+with descriptions written to the standard we recommend — explicit "use when" and "do not
+use for" clauses — lands in the region of 6,000–9,000 tokens of fixed overhead per request.
+At Opus 5 pricing and 100,000 requests a month, that is roughly $3,000–$4,500 annually in
+tool definitions alone, before anyone asks a question.</p>
+<p>Cached, the same overhead costs about a tenth of that. Which brings us to the important
+part.</p>
+<h2>Caching tool definitions</h2>
+<p>Tool definitions sit <strong>first</strong> in the cache hierarchy: <code>tools → system → messages</code>. That
+position is ideal — a cached prefix covering your tools also covers everything before it,
+and there is nothing before it.</p>
+<p>So the fixed overhead is exactly the kind of content prompt caching was built for. Cache
+reads cost 0.1× base input. Your 6,000-token tool block drops from a real cost to a
+rounding error.</p>
+<p>There is one catch, and it is sharp.</p>
+<p><strong>Any change to a tool definition invalidates the entire cache.</strong> Not just the tools
+segment — tools, system and messages, all of it. Changing a tool name, a description, or a
+single parameter is a full invalidation.</p>
+<p>For static tool sets this never comes up. For anything dynamic it is the difference between
+a 90% saving and none at all. Two patterns cause silent, permanent cache misses:</p>
+<p><strong>Non-deterministic serialisation.</strong> If your tool definitions are generated from a map or
+dictionary whose iteration order is not stable, the JSON differs between requests even
+though the content is identical. Some languages — Go and Swift among them — randomise map
+key order during JSON conversion. Everything looks correct. Nothing ever caches. Enforce
+stable key ordering.</p>
+<p><strong>Per-request interpolation.</strong> Injecting a timestamp, a user ID or a session token into a
+tool description regenerates it every request. If you need per-user context in a tool, put
+it in the tool's <em>arguments</em>, not in its description.</p>
+<p>The test for both: log the serialised tool block on two consecutive requests and diff them.
+If they differ by a single byte, you are paying the write premium every time and never
+reading.</p>
+<h2>Cutting the definitions down</h2>
+<p>Caching handles most of the cost. But context window pressure is a separate problem —
+tokens spent on tools are tokens unavailable for actual work — and in long agent loops that
+matters independently of price.</p>
+<p><strong>Remove tools nobody calls.</strong> Instrument which tools are actually invoked over a month.
+Most deployments have several that never fire. Every one of them costs tokens on every
+request and makes the remaining tools marginally harder to select correctly.</p>
+<p><strong>Consolidate variations into parameters.</strong> <code>search_by_name</code>, <code>search_by_email</code> and
+<code>search_by_phone</code> are three definitions where one <code>search_contacts</code> with a <code>field</code> enum
+would do. Roughly a two-thirds saving on that group.</p>
+<p><strong>Trim schema verbosity, not schema clarity.</strong> JSON Schema has plenty of room for
+redundancy — nested wrappers around single values, repeated boilerplate in every property
+description, examples that duplicate an enum already listing valid values. Cut those.</p>
+<p><strong>Do not cut the routing clauses.</strong> The "do not use for" lines are the most token-expensive
+part of a good description and the most valuable. A wrong tool call costs a full round trip
+plus a recovery attempt, which is far more than the tokens that would have prevented it.</p>
+<p>That last point is the trade-off to hold onto. Where you are cutting <em>redundancy</em>, cut
+freely. Where you are cutting <em>decision criteria</em>, you are trading a fixed known cost for a
+variable unknown one, usually badly.</p>
+<p><strong>Consider deferred tool loading.</strong> For very large tool sets, some clients support loading
+only a subset up front and fetching the rest on demand. Where it is available it changes
+the economics of a large deployment substantially — you pay for the tools a task actually
+needs rather than every tool that exists.</p>
+<h2>A working order</h2>
+<ol>
+<li>Export <code>tools/list</code> from each connected server.</li>
+<li>Run the script. Sort by cost.</li>
+<li>Delete tools nobody invokes. Check your logs, not your intuition.</li>
+<li>Consolidate near-duplicates into parameterised tools.</li>
+<li>Trim redundancy from schemas; leave routing clauses alone.</li>
+<li>Verify your tool block serialises byte-identically across requests.</li>
+<li>Confirm caching is actually hitting — <code>cache_read_input_tokens</code> should be large and
+   <code>cache_creation_input_tokens</code> near zero in steady state.</li>
+<li>Re-measure. Multiply by your monthly request volume so the number is in euros.</li>
+</ol>
+<p>Step 6 is the one that pays for the exercise. We have seen deployments where every other
+optimisation was in place and a randomised key order meant the cache had never once been
+read.</p>
+    </div>
+  </div>
+
+  <div class="article-foot">
+    <div class="wrap">
+      <div class="related">
+        <h2>Related reading</h2>
+        <ul>
+          <li><a href="/blog/mcp-tool-schema-design/">Designing MCP tool schemas a model actually uses correctly</a><div class="rel-dek">The model never sees your implementation. It sees a name, a description and a JSON Schema — and that is the entire interface. Most tool-calling failures are interface design problems wearing a model&#x27;s clothes.</div></li>
+          <li><a href="/blog/claude-prompt-caching-guide/">Claude prompt caching — automatic, explicit, and the lookback trap</a><div class="rel-dek">The cache does not find stable content behind your breakpoint. It finds entries earlier requests already wrote. Understanding that one sentence is the difference between an 80% discount and paying a premium on every request.</div></li>
+          <li><a href="/blog/claude-model-selection-cost-per-task/">Model selection is a cost-per-resolved-task problem, not a price-per-token one</a><div class="rel-dek">A model that costs a fifth as much but needs three attempts is not cheaper. Here is how to build the comparison that actually predicts your bill — and why Sonnet 5&#x27;s September price change should send you back to it.</div></li>
+        </ul>
+      </div>
+      <div class="sources">
+        <h2>Sources</h2>
+        <ul>
+          <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" rel="noopener">Claude Platform Docs — Prompt caching</a></li>
+        </ul>
+      </div>
+      <div class="cta-block">
+        <div>
+          <h2>Working on something like this?</h2>
+          <p>We build Claude integrations, MCP servers and agentic workflows for
+             startups and SMBs in the Netherlands and across the EU.</p>
+        </div>
+        <a href="/#contact" class="btn btn-primary">Book a free consult</a>
+      </div>
+    </div>
+  </div>
+  </article>
+
+  <footer>
+    <span>&copy; 2026 Product Labs B.V. &middot; Amsterdam, The Netherlands</span>
+    <span><a href="/blog/">Blog</a> &middot; <a href="mailto:jon@productlabs.nl">jon@productlabs.nl</a></span>
+  </footer>
+</body>
+</html>

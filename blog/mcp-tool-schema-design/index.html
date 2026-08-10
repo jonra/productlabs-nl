@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f3ee" />
+  <title>Designing MCP Tool Schemas a Model Actually Uses Correctly</title>
+  <meta name="description" content="Tool naming, descriptions, parameter design and error messages — the schema decisions that determine whether a model calls your tool correctly." />
+  <link rel="canonical" href="https://www.productlabs.nl/blog/mcp-tool-schema-design/" />
+  
+  <meta property="og:title" content="Designing MCP Tool Schemas a Model Actually Uses Correctly" />
+  <meta property="og:description" content="Tool naming, descriptions, parameter design and error messages — the schema decisions that determine whether a model calls your tool correctly." />
+  <meta property="og:url" content="https://www.productlabs.nl/blog/mcp-tool-schema-design/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_NL" />
+  <meta property="og:site_name" content="ProductLabs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Designing MCP Tool Schemas a Model Actually Uses Correctly" />
+  <meta name="twitter:description" content="Tool naming, descriptions, parameter design and error messages — the schema decisions that determine whether a model calls your tool correctly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/blog/assets/blog.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Designing MCP tool schemas a model actually uses correctly",
+  "description": "The model never sees your implementation. It sees a name, a description and a JSON Schema \u2014 and that is the entire interface. Most tool-calling failures are interface design problems wearing a model's clothes.",
+  "datePublished": "2026-07-12",
+  "dateModified": "2026-08-10",
+  "author": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "ProductLabs",
+    "url": "https://www.productlabs.nl"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.productlabs.nl/blog/mcp-tool-schema-design/"
+  },
+  "inLanguage": "en",
+  "keywords": "mcp tool design, mcp tool schema, llm tool description best practices, tool calling accuracy, json schema llm tools"
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.productlabs.nl/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "https://www.productlabs.nl/blog/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Designing MCP tool schemas a model actually uses correctly",
+      "item": "https://www.productlabs.nl/blog/mcp-tool-schema-design/"
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">Product<span>Labs</span></a>
+    <div class="nav-links">
+      <a href="/#services">Services</a>
+      <a href="/#ecosystem">Anthropic ecosystem</a>
+      <a href="/#use-cases">Use cases</a>
+      <a href="/blog/" aria-current="page">Blog</a>
+    </div>
+    <a href="/#contact" class="cta-nav">Get in touch</a>
+  </nav>
+  <article>
+  <header class="article-head">
+    <div class="wrap">
+      <div class="breadcrumb">
+        <a href="/">Home</a><span class="sep">/</span><a href="/blog/">Blog</a><span class="sep">/</span><a href="/blog/topics/mcp/">MCP</a>
+      </div>
+      <h1>Designing MCP tool schemas a model actually uses correctly</h1>
+      <p class="dek">The model never sees your implementation. It sees a name, a description and a JSON Schema — and that is the entire interface. Most tool-calling failures are interface design problems wearing a model&#x27;s clothes.</p>
+      <div class="article-meta">
+        <span>12 July 2026</span>
+        <span>Updated 10 August 2026</span>
+        <span>9 min read</span>
+        <a class="topic-tag" href="/blog/topics/mcp/">MCP</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+<p>When a tool call goes wrong, the instinct is to blame the model. Sometimes that is fair.
+More often, we open the tool definition and find an interface no careful reader could use
+correctly either.</p>
+<p>The model never sees your implementation. It sees a name, a description and a JSON Schema.
+That is the entire interface, and it is a <em>documentation</em> problem more than a code problem.</p>
+<h2>Names carry meaning, so spend them</h2>
+<p>The name is the first and cheapest signal. Some rules that consistently help:</p>
+<p><strong>Verb-object, not nouns.</strong> <code>search_invoices</code> beats <code>invoices</code>. <code>create_ticket</code> beats
+<code>ticket_handler</code>. The model is choosing an action; name the action.</p>
+<p><strong>Namespace when tools coexist.</strong> Any real deployment has several servers connected at
+once. <code>search</code> is ambiguous across a document store, a CRM and a ticketing system.
+<code>crm_search_contacts</code> is not. This matters more than it used to, because users routinely
+run many servers simultaneously.</p>
+<p><strong>Be specific about the object.</strong> <code>get_data</code> tells the model nothing about when to use it.
+<code>get_customer_invoice</code> tells it everything.</p>
+<p><strong>Distinguish neighbours audibly.</strong> If you have <code>update_record</code> and <code>upsert_record</code>, expect
+confusion. Rename to <code>update_existing_record</code> and <code>create_or_update_record</code>. The extra
+characters cost a few tokens; the mistake costs a wrong write.</p>
+<h2>Descriptions should contain decision criteria</h2>
+<p>This is the highest-leverage change most tool definitions need.</p>
+<p>Most descriptions define what the tool <em>is</em>. What the model needs is when to <em>use</em> it —
+and, crucially, when not to.</p>
+<p>Weak:</p>
+<pre><code>search_documents: Searches the document store.
+</code></pre>
+<p>Strong:</p>
+<pre><code>search_documents: Full-text search across the customer's uploaded documents.
+Use when the user asks about the contents of a specific document, or asks a
+question that document text would answer.
+
+Do NOT use for: questions about document metadata such as upload date, owner
+or file size — use list_documents for those. Do NOT use to retrieve a document
+by ID — use get_document.
+
+Returns up to 10 matching excerpts with document IDs. If more results are
+needed, narrow the query rather than paginating.
+</code></pre>
+<p>The second version is longer, and every additional token is in every request. It is still
+usually the right trade, because a wrong tool call costs a full round trip plus a recovery
+attempt — dwarfing the token cost of a clear description. Measure this on your own
+workload, but the default should be toward clarity.</p>
+<p>Three elements do the work:</p>
+<ul>
+<li><strong>Use when</strong> — the positive trigger, phrased the way a user would phrase the request</li>
+<li><strong>Do not use for</strong> — explicit routing to the correct neighbouring tool</li>
+<li><strong>What comes back</strong> — so the model can plan the next step rather than guessing</li>
+</ul>
+<p>That middle element is the one almost nobody writes and the one that most reduces
+misrouting.</p>
+<h2>Parameter design</h2>
+<p><strong>Prefer flat over nested.</strong> Deeply nested objects produce more malformed calls. If you
+can express something as three top-level parameters instead of one nested object, do.</p>
+<p><strong>Enums over free strings.</strong> Any parameter with a known set of valid values should be an
+enum. It constrains generation, it documents itself, and it turns a class of runtime
+validation error into an impossible input.</p>
+<pre><code class="language-json">{
+  &quot;status&quot;: {
+    &quot;type&quot;: &quot;string&quot;,
+    &quot;enum&quot;: [&quot;draft&quot;, &quot;sent&quot;, &quot;paid&quot;, &quot;overdue&quot;, &quot;cancelled&quot;],
+    &quot;description&quot;: &quot;Invoice status to filter by. Omit to include all statuses.&quot;
+  }
+}
+</code></pre>
+<p><strong>Minimise required parameters.</strong> Every required parameter is another thing the model must
+correctly infer, often from an underspecified user request. If a sensible default exists,
+make it optional and apply the default server-side.</p>
+<p><strong>Describe every parameter, including obvious ones.</strong> Especially formats. <code>date</code> is
+ambiguous; "ISO 8601 date, e.g. 2026-06-30" is not. Ambiguous date and ID formats are one
+of the most common sources of malformed arguments.</p>
+<p><strong>Bound your numbers.</strong> <code>minimum</code>, <code>maximum</code>, and a description saying what happens at the
+limits. A <code>limit</code> parameter with no maximum invites a request for ten thousand records.</p>
+<p><strong>Avoid boolean pairs that encode a mode.</strong> <code>include_archived</code> plus <code>only_archived</code> is
+three valid states expressed as four combinations, one nonsensical. Use a single enum.</p>
+<h2>Errors are instructions</h2>
+<p>A tool error is not a failure report for a log file. It is the next thing the model reads,
+and it determines what happens next. Write it as an instruction.</p>
+<p>Weak:</p>
+<pre><code>Error: invalid request
+</code></pre>
+<p>Strong:</p>
+<pre><code>Error: 'start_date' must be ISO 8601 (YYYY-MM-DD). Received '30/06/2026'.
+Retry with start_date=&quot;2026-06-30&quot;.
+</code></pre>
+<p>The strong version states what was wrong, what was received, and what to do. A model
+reading it recovers on the next call. A model reading "invalid request" retries the same
+malformed argument or gives up.</p>
+<p>The pattern generalises:</p>
+<ul>
+<li><strong>Validation errors</strong> — name the field, show the received value, give the correct form</li>
+<li><strong>Not found</strong> — say so unambiguously, and suggest the tool that lists valid IDs</li>
+<li><strong>Permission denied</strong> — distinguish "you cannot do this" from "you need to authenticate
+  first", because the recovery differs completely</li>
+<li><strong>Rate limited</strong> — say when to retry</li>
+<li><strong>Empty results</strong> — an explicit "no results matched" beats an empty array, which reads as
+  ambiguous</li>
+</ul>
+<h2>Return shape</h2>
+<p><strong>Return what the next step needs, and not much else.</strong> A tool that returns a full database
+row when the model needs three fields spends context on every call. This compounds fast in
+agent loops.</p>
+<p><strong>Include identifiers.</strong> If the model may need to act on a result, the result must carry
+the handle. Search results without IDs force a second lookup.</p>
+<p><strong>Summarise large results server-side.</strong> If a query can return five hundred rows, return
+the top ten plus a total count. The model cannot use five hundred rows and will pay for
+all of them.</p>
+<p><strong>Keep shapes stable.</strong> A tool that sometimes returns an object and sometimes an array
+produces unreliable downstream handling. Pick one.</p>
+<p><strong>Say when there is more.</strong> <code>"showing 10 of 47 matches"</code> lets the model decide whether to
+narrow the query. A bare truncation looks like a complete answer.</p>
+<h2>Tool count discipline</h2>
+<p>Every tool definition sits in the context window on every request. Beyond the token cost —
+which is <a href="/blog/mcp-tool-definition-token-cost/">its own article</a> — there is a selection
+cost. More tools means more opportunity to pick the wrong one, and the marginal tool makes
+every other tool slightly harder to choose correctly.</p>
+<p>Two practices help:</p>
+<p><strong>Consolidate variations into parameters.</strong> <code>search_by_name</code>, <code>search_by_email</code> and
+<code>search_by_phone</code> should be one <code>search_contacts</code> with a <code>field</code> enum.</p>
+<p><strong>Split genuinely different operations.</strong> Conversely, a single <code>manage_record</code> taking an
+<code>action</code> parameter of <code>create</code>, <code>update</code> or <code>delete</code> hides a destructive operation behind a
+benign name. Destructive actions deserve their own tools, both for clarity and so you can
+scope permissions separately.</p>
+<p>The tension between those two is real. The resolution: consolidate along dimensions that
+do not change risk, split along dimensions that do.</p>
+<h2>Testing the interface</h2>
+<p>You cannot evaluate a tool definition by reading it — you wrote it, so it is obvious to
+you. Test it.</p>
+<p>Build a set of realistic user requests, run them against your server, and record which
+tool was called with which arguments. You are measuring two things: <strong>selection accuracy</strong>
+(did it pick the right tool) and <strong>argument accuracy</strong> (were the arguments well-formed and
+correct).</p>
+<p>Run each case several times. Tool selection is non-deterministic, and a definition that
+works four times out of five will look perfect in a single manual test and produce a
+steady trickle of production failures.</p>
+<p>When a case fails, resist patching the system prompt. The system prompt is a workaround
+that has to be maintained forever and does not travel with your server to other clients.
+Fix the definition — usually by adding a "do not use for" clause pointing at the tool that
+should have been called.</p>
+<h2>A checklist</h2>
+<ul>
+<li>Name is verb-object, namespaced, and audibly distinct from its neighbours</li>
+<li>Description says <strong>use when</strong>, <strong>do not use for</strong>, and <strong>what comes back</strong></li>
+<li>Every parameter has a description, including format for dates and IDs</li>
+<li>Known value sets are enums</li>
+<li>Required parameters are the minimum the tool genuinely cannot work without</li>
+<li>Numeric parameters have bounds</li>
+<li>Errors name the field, show the received value, and state the fix</li>
+<li>Returns include identifiers needed for follow-up actions</li>
+<li>Large results are summarised with a total count</li>
+<li>Destructive operations are separate tools, not an <code>action</code> parameter</li>
+<li>Selection and argument accuracy measured over repeated runs, not one manual try</li>
+</ul>
+    </div>
+  </div>
+
+  <div class="article-foot">
+    <div class="wrap">
+      <div class="related">
+        <h2>Related reading</h2>
+        <ul>
+          <li><a href="/blog/mcp-tool-definition-token-cost/">What your MCP tool definitions cost on every single request</a><div class="rel-dek">Tool definitions sit in the context window before the user has typed anything, on every request, forever. Here is a script that measures the bill — and the reason a one-character change to a description can invalidate your entire cache.</div></li>
+          <li><a href="/blog/testing-debugging-mcp-servers/">Testing and debugging MCP servers before you ship</a><div class="rel-dek">Three layers need testing and most teams only cover one. A working pytest suite you can copy, including the protocol conformance checks the current revision made necessary.</div></li>
+          <li><a href="/blog/mcp-2026-07-28-migration-stateless-protocol/">MCP without initialize — migrating to the 2026-07-28 revision</a><div class="rel-dek">The current MCP revision removes the initialize handshake entirely. Servers are stateless, every request carries its own protocol version, and most of the MCP material on the internet now describes a legacy protocol.</div></li>
+        </ul>
+      </div>
+      <div class="cta-block">
+        <div>
+          <h2>Working on something like this?</h2>
+          <p>We build Claude integrations, MCP servers and agentic workflows for
+             startups and SMBs in the Netherlands and across the EU.</p>
+        </div>
+        <a href="/#contact" class="btn btn-primary">Book a free consult</a>
+      </div>
+    </div>
+  </div>
+  </article>
+
+  <footer>
+    <span>&copy; 2026 Product Labs B.V. &middot; Amsterdam, The Netherlands</span>
+    <span><a href="/blog/">Blog</a> &middot; <a href="mailto:jon@productlabs.nl">jon@productlabs.nl</a></span>
+  </footer>
+</body>
+</html>
